@@ -1,5 +1,7 @@
 module Main where
 
+import System.IO (hPutStrLn, stderr)
+
 imageWidth :: Int
 imageWidth = 256
 
@@ -21,9 +23,12 @@ getColor x y =
       blue = 0
    in Color {r = round red, g = round green, b = blue}
 
+displayLine :: Int -> IO ()
+displayLine y = do
+  hPutStrLn stderr ("Scanlines remaining: " ++ show (imageHeight - y))
+  mapM_ (putStrLn . getColorString) [getColor x y | x <- [0 .. imageWidth - 1]]
+
 main :: IO ()
 main = do
   putStr ("P3\n" ++ show imageWidth ++ " " ++ show imageHeight ++ "\n255\n")
-  let colors = [getColor x y | y <- [0 .. imageHeight - 1], x <- [0 .. imageWidth - 1]]
-  let colorStrings = map getColorString colors
-  mapM_ putStrLn colorStrings
+  mapM_ displayLine [0 .. imageHeight - 1]
