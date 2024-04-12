@@ -3,7 +3,7 @@ module Main where
 import Color (Color, writeColor)
 import Ray (Ray (..))
 import System.IO (hPutStrLn, stderr)
-import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
+import Vec3 (Point, Vec3 (..), divVec3, dotProduct, mulVec3, unitVec3)
 
 -- Image
 aspectRatio :: Double
@@ -49,10 +49,23 @@ pixel00Loc :: Point
 pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
 
 -- Render
+hitSphere :: Point -> Double -> Ray -> Bool
+hitSphere center radius ray =
+  let d = direction ray
+      qc = center - origin ray
+      a = dotProduct d d
+      b = -(2 * dotProduct d qc)
+      c = dotProduct qc qc - radius * radius
+      discrimininant = b * b - 4 * a * c
+   in discrimininant >= 0
+
 rayColor :: Ray -> Color
 rayColor ray =
-  let a = (1 + y (unitVec3 (direction ray))) / 2
-   in (1 - a) `mulVec3` 1 + a `mulVec3` Vec3 0.5 0.7 1.0
+  if hitSphere (Vec3 0 0 (-1)) 0.5 ray
+    then Vec3 1 0 0
+    else
+      let a = (1 + y (unitVec3 (direction ray))) / 2
+       in (1 - a) `mulVec3` 1 + a `mulVec3` Vec3 0.5 0.7 1.0
 
 getColor :: Int -> Int -> Color
 getColor i j =
