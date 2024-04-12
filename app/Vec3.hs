@@ -1,13 +1,23 @@
+{-# LANGUAGE InstanceSigs #-}
+
 module Vec3 where
 
 data Vec3 = Vec3 {x :: Double, y :: Double, z :: Double} deriving (Show)
 
+type Point = Vec3
+
 instance Num Vec3 where
+  (+) :: Vec3 -> Vec3 -> Vec3
   (Vec3 x1 y1 z1) + (Vec3 x2 y2 z2) = Vec3 (x1 + x2) (y1 + y2) (z1 + z2)
+  (-) :: Vec3 -> Vec3 -> Vec3
   (Vec3 x1 y1 z1) - (Vec3 x2 y2 z2) = Vec3 (x1 - x2) (y1 - y2) (z1 - z2)
+  (*) :: Vec3 -> Vec3 -> Vec3
   (Vec3 x1 y1 z1) * (Vec3 x2 y2 z2) = Vec3 (x1 * x2) (y1 * y2) (z1 * z2)
+  abs :: Vec3 -> Vec3
   abs (Vec3 x y z) = Vec3 (abs x) (abs y) (abs z)
+  signum :: Vec3 -> Vec3
   signum (Vec3 x y z) = Vec3 (signum x) (signum y) (signum z)
+  fromInteger :: Integer -> Vec3
   fromInteger i = Vec3 (fromInteger i) (fromInteger i) (fromInteger i)
 
 dotProduct :: Vec3 -> Vec3 -> Double
