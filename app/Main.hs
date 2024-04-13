@@ -1,7 +1,7 @@
 module Main where
 
 import Color (Color, writeColor)
-import Ray (Ray (..))
+import Ray (Ray (..), rayAt)
 import System.IO (hPutStrLn, stderr)
 import Vec3 (Point, Vec3 (..), divVec3, dotProduct, mulVec3, unitVec3)
 
@@ -49,7 +49,7 @@ pixel00Loc :: Point
 pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
 
 -- Render
-hitSphere :: Point -> Double -> Ray -> Bool
+hitSphere :: Point -> Double -> Ray -> Maybe Double
 hitSphere center radius ray =
   let d = direction ray
       qc = center - origin ray
@@ -57,13 +57,15 @@ hitSphere center radius ray =
       b = -(2 * dotProduct d qc)
       c = dotProduct qc qc - radius * radius
       discrimininant = b * b - 4 * a * c
-   in discrimininant >= 0
+   in if discrimininant >= 0 then Just ((-b - sqrt discrimininant) / (2 * a)) else Nothing
 
 rayColor :: Ray -> Color
 rayColor ray =
-  if hitSphere (Vec3 0 0 (-1)) 0.5 ray
-    then Vec3 1 0 0
-    else
+  case hitSphere (Vec3 0 0 (-1)) 0.5 ray of
+    Just t ->
+      let n = unitVec3 (rayAt ray t - Vec3 0 0 (-1))
+       in 0.5 `mulVec3` (n + 1)
+    Nothing ->
       let a = (1 + y (unitVec3 (direction ray))) / 2
        in (1 - a) `mulVec3` 1 + a `mulVec3` Vec3 0.5 0.7 1.0
 

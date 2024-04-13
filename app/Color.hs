@@ -14,9 +14,9 @@ writeColor :: Color -> IO ()
 writeColor c =
   let normalizedColor = colorRatio `mulVec3` c
       rByte :: Int
-      rByte = round (x normalizedColor)
+      rByte = floor (x normalizedColor)
       gByte :: Int
-      gByte = round (y normalizedColor)
+      gByte = floor (y normalizedColor)
       bByte :: Int
-      bByte = round (z normalizedColor)
+      bByte = floor (z normalizedColor)
    in putStrLn (show rByte ++ " " ++ show gByte ++ " " ++ show bByte)
