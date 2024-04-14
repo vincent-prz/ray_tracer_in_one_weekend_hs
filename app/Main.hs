@@ -54,10 +54,11 @@ hitSphere center radius ray =
   let d = direction ray
       qc = center - origin ray
       a = dotProduct d d
-      b = -(2 * dotProduct d qc)
+      -- let's use h such as b = - 2 * h, to simplify the equations
+      h = dotProduct d qc
       c = dotProduct qc qc - radius * radius
-      discrimininant = b * b - 4 * a * c
-   in if discrimininant >= 0 then Just ((-b - sqrt discrimininant) / (2 * a)) else Nothing
+      discrimininant = h * h - a * c
+   in if discrimininant >= 0 then Just ((h - sqrt discrimininant) / a) else Nothing
 
 rayColor :: Ray -> Color
 rayColor ray =
