@@ -3,7 +3,7 @@
 
 module Sphere where
 
-import Hittable (HitRecord (..), Hittable (hit))
+import Hittable (HitRecord (..), Hittable (hit), mkHitRecord)
 import Ray
 import Vec3 (Point, dotProduct, unitVec3)
 
@@ -29,5 +29,5 @@ instance Hittable Sphere where
             root <- findFirstInInterval [(h - sqrt discrimininant) / a, (h + sqrt discrimininant) / a] (tmin, tmax)
             let intersection = rayAt ray root
             let n = unitVec3 (intersection - center)
-            return HitRecord {hitRecordP = intersection, hitRecordNormal = n, hitRecordT = root}
+            return $ mkHitRecord intersection n root ray
           else Nothing
