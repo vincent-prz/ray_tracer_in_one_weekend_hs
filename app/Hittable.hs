@@ -2,6 +2,7 @@
 
 module Hittable where
 
+import Control.Applicative (Alternative ((<|>)))
 import Ray
 import Vec3
 
@@ -32,10 +33,8 @@ instance (Hittable a) => Hittable [a] where
     where
       f :: (Hittable a) => Maybe HitRecord -> a -> Maybe HitRecord
       f closestRecord object =
-        case hit object ray (tmin, ((hitRecordT <$> closestRecord) `orElse` tmax)) of
-          Nothing -> closestRecord
-          Just record -> Just record
-
-orElse :: Maybe a -> a -> a
-orElse Nothing a = a
-orElse (Just a) _ = a
+        hit
+          object
+          ray
+          (tmin, maybe tmax hitRecordT closestRecord)
+          <|> closestRecord
