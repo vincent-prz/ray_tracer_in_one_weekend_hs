@@ -1,15 +1,15 @@
 module Main where
 
 import Color (Color, writeColor)
-import Hittable (HitRecord (..), hit)
+import Hittable (AnyHittable (..), HitRecord (..), hit)
 import Ray (Ray (..))
 import Sphere (Sphere (..))
 import System.IO (hPutStrLn, stderr)
 import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
 
--- FIXME: this
+-- positive infinity
 maxDouble :: Double
-maxDouble = 10000
+maxDouble = 1 / 0
 
 -- Image
 aspectRatio :: Double
@@ -55,12 +55,16 @@ pixel00Loc :: Point
 pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
 
 -- Render
-sphere :: Sphere
-sphere = Sphere {center = Vec3 0 0 (-1), radius = 0.5}
+
+world :: [AnyHittable]
+world =
+  [ AnyHittable Sphere {center = Vec3 0 0 (-1), radius = 0.5},
+    AnyHittable Sphere {center = Vec3 0 (-100.5) (-1), radius = 100}
+  ]
 
 rayColor :: Ray -> Color
 rayColor ray =
-  case hit sphere ray (0, maxDouble) of
+  case hit world ray (0, maxDouble) of
     Just record -> 0.5 `mulVec3` (hitRecordNormal record + 1)
     Nothing ->
       let a = (1 + y (unitVec3 (direction ray))) / 2

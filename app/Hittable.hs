@@ -1,3 +1,5 @@
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 
 module Hittable where
@@ -8,6 +10,9 @@ import Vec3
 
 class Hittable a where
   hit :: a -> Ray -> (Double, Double) -> Maybe HitRecord
+
+-- Define an existential wrapper type to allow heterogeneous lists of Hittables.
+data AnyHittable = forall a. (Hittable a) => AnyHittable a
 
 data HitRecord = HitRecord
   { hitRecordP :: Point,
@@ -27,12 +32,12 @@ mkHitRecord p outwardNormal t ray =
           hitRecordfrontFace = frontFace
         }
 
-instance (Hittable a) => Hittable [a] where
-  hit :: (Hittable a) => [a] -> Ray.Ray -> (Double, Double) -> Maybe HitRecord
+instance Hittable [AnyHittable] where
+  hit :: [AnyHittable] -> Ray -> (Double, Double) -> Maybe HitRecord
   hit objects ray (tmin, tmax) = foldl f Nothing objects
     where
-      f :: (Hittable a) => Maybe HitRecord -> a -> Maybe HitRecord
-      f closestRecord object =
+      f :: Maybe HitRecord -> AnyHittable -> Maybe HitRecord
+      f closestRecord (AnyHittable object) =
         hit
           object
           ray
