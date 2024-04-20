@@ -5,11 +5,12 @@
 module Hittable where
 
 import Control.Applicative (Alternative ((<|>)))
+import Interval (Interval (Interval))
 import Ray
 import Vec3
 
 class Hittable a where
-  hit :: a -> Ray -> (Double, Double) -> Maybe HitRecord
+  hit :: a -> Ray -> Interval -> Maybe HitRecord
 
 -- Define an existential wrapper type to allow heterogeneous lists of Hittables.
 data AnyHittable = forall a. (Hittable a) => AnyHittable a
@@ -33,13 +34,13 @@ mkHitRecord p outwardNormal t ray =
         }
 
 instance Hittable [AnyHittable] where
-  hit :: [AnyHittable] -> Ray -> (Double, Double) -> Maybe HitRecord
-  hit objects ray (tmin, tmax) = foldl f Nothing objects
+  hit :: [AnyHittable] -> Ray -> Interval -> Maybe HitRecord
+  hit objects ray (Interval tmin tmax) = foldl f Nothing objects
     where
       f :: Maybe HitRecord -> AnyHittable -> Maybe HitRecord
       f closestRecord (AnyHittable object) =
         hit
           object
           ray
-          (tmin, maybe tmax hitRecordT closestRecord)
+          (Interval tmin (maybe tmax hitRecordT closestRecord))
           <|> closestRecord

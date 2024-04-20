@@ -2,14 +2,12 @@ module Main where
 
 import Color (Color, writeColor)
 import Hittable (AnyHittable (..), HitRecord (..), hit)
+import Interval (Interval (Interval))
 import Ray (Ray (..))
 import Sphere (Sphere (..))
 import System.IO (hPutStrLn, stderr)
+import Utils (posInfinity)
 import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
-
--- positive infinity
-maxDouble :: Double
-maxDouble = 1 / 0
 
 -- Image
 aspectRatio :: Double
@@ -64,7 +62,7 @@ world =
 
 rayColor :: Ray -> Color
 rayColor ray =
-  case hit world ray (0, maxDouble) of
+  case hit world ray (Interval 0 posInfinity) of
     Just record -> 0.5 `mulVec3` (hitRecordNormal record + 1)
     Nothing ->
       let a = (1 + y (unitVec3 (direction ray))) / 2

@@ -65,8 +65,10 @@ executable rayTracerInOneWeekend
     other-modules:
         Color
         Hittable
+        Interval
         Ray
         Sphere
+        Utils
         Vec3
 
     -- LANGUAGE extensions used by modules in this package.
