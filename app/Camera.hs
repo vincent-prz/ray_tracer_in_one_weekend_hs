@@ -7,7 +7,7 @@ import Hittable (AnyHittable (AnyHittable), HitRecord (hitRecordNormal), Hittabl
 import Interval
 import Ray
 import System.IO (hPutStrLn, stderr)
-import Utils (posInfinity)
+import Utils (posInfinity, randomDoubleUnit)
 import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
 
 data Camera = Camera
@@ -17,7 +17,9 @@ data Camera = Camera
     cameraCenter :: Point,
     cameraPixel00Loc :: Point,
     cameraPixelDeltaU :: Vec3,
-    cameraPixelDeltaV :: Vec3
+    cameraPixelDeltaV :: Vec3,
+    cameraSamplesPerPixel :: Int,
+    cameraPixelSamplesScale :: Double
   }
 
 mkCamera :: Double -> Int -> Camera
@@ -52,6 +54,9 @@ mkCamera aspectRatio imageWidth =
 
       pixel00Loc :: Vec3
       pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
+
+      samplesPerPixel :: Int
+      samplesPerPixel = 10
    in Camera
         { cameraAspectRatio = aspectRatio,
           cameraImageWidth = imageWidth,
@@ -59,7 +64,9 @@ mkCamera aspectRatio imageWidth =
           cameraCenter = center,
           cameraPixel00Loc = pixel00Loc,
           cameraPixelDeltaU = pixelDeltaU,
-          cameraPixelDeltaV = pixelDeltaV
+          cameraPixelDeltaV = pixelDeltaV,
+          cameraSamplesPerPixel = samplesPerPixel,
+          cameraPixelSamplesScale = 1 / fromIntegral samplesPerPixel
         }
 
 render :: Camera -> AnyHittable -> IO ()
@@ -70,14 +77,31 @@ render cam@(Camera {cameraImageWidth, cameraImageheight}) world = do
 displayLine :: Camera -> AnyHittable -> Int -> IO ()
 displayLine cam@(Camera {cameraImageWidth, cameraImageheight}) world j = do
   hPutStrLn stderr ("Scanlines remaining: " ++ show (cameraImageheight - j))
-  mapM_ writeColor [getColor cam world i j | i <- [0 .. cameraImageWidth - 1]]
+  colors <- sequence [getColor cam world i j | i <- [0 .. cameraImageWidth - 1]]
+  mapM_ writeColor colors
 
-getColor :: Camera -> AnyHittable -> Int -> Int -> Color
-getColor (Camera {cameraCenter, cameraPixel00Loc, cameraPixelDeltaU, cameraPixelDeltaV}) world i j =
-  let pixelCenter = cameraPixel00Loc + (fromIntegral i `mulVec3` cameraPixelDeltaU) + (fromIntegral j `mulVec3` cameraPixelDeltaV)
-      rayDirection = pixelCenter - cameraCenter
-      ray = Ray {origin = cameraCenter, direction = rayDirection}
-   in rayColor ray world
+getColor :: Camera -> AnyHittable -> Int -> Int -> IO Color
+getColor cam@(Camera {cameraSamplesPerPixel, cameraPixelSamplesScale}) world i j =
+  do
+    randomColors <- sequence [getRandomColor cam world i j | _ <- [0 .. cameraSamplesPerPixel - 1]]
+    return (cameraPixelSamplesScale `mulVec3` sum randomColors)
+
+getRandomColor :: Camera -> AnyHittable -> Int -> Int -> IO Color
+getRandomColor cam world i j =
+  do
+    randomRay <- getRandomRay cam i j
+    return (rayColor randomRay world)
+
+getRandomRay :: Camera -> Int -> Int -> IO Ray
+getRandomRay (Camera {cameraCenter, cameraPixel00Loc, cameraPixelDeltaU, cameraPixelDeltaV}) i j = do
+  offset <- sampleSquare
+  let pixelCenterU = (fromIntegral i + x offset) `mulVec3` cameraPixelDeltaU
+  let pixelCenterV = (fromIntegral j + y offset) `mulVec3` cameraPixelDeltaV
+  let pixelCenter = cameraPixel00Loc + pixelCenterU + pixelCenterV
+  let rayDirection = pixelCenter - cameraCenter
+  return (Ray {origin = cameraCenter, direction = rayDirection})
+  where
+    sampleSquare = (\x y -> Vec3 (x - 0.5) (y - 0.5) 0) <$> randomDoubleUnit <*> randomDoubleUnit
 
 rayColor :: Ray -> AnyHittable -> Color
 rayColor ray (AnyHittable world) =

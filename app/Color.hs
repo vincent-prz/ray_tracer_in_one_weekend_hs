@@ -1,5 +1,6 @@
 module Color where
 
+import Interval (Interval (Interval), intervalClamps)
 import Vec3
 
 type Color = Vec3
@@ -12,7 +13,8 @@ getColorString c = show (x c) ++ " " ++ show (y c) ++ " " ++ show (z c)
 
 writeColor :: Color -> IO ()
 writeColor c =
-  let normalizedColor = colorRatio `mulVec3` c
+  let intensity = Interval 0 0.999
+      normalizedColor = colorRatio `mulVec3` (c `applyToVec3` intervalClamps intensity)
       rByte :: Int
       rByte = floor (x normalizedColor)
       gByte :: Int
