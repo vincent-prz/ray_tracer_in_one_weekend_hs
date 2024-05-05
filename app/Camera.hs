@@ -19,11 +19,12 @@ data Camera = Camera
     cameraPixelDeltaU :: Vec3,
     cameraPixelDeltaV :: Vec3,
     cameraSamplesPerPixel :: Int,
-    cameraPixelSamplesScale :: Double
+    cameraPixelSamplesScale :: Double,
+    cameraMaxDepth :: Int
   }
 
-mkCamera :: Double -> Int -> Camera
-mkCamera aspectRatio imageWidth =
+mkCamera :: Double -> Int -> Int -> Camera
+mkCamera aspectRatio imageWidth maxDepth =
   let imageHeight = let val = round (fromIntegral imageWidth / aspectRatio) in max val 1
       focalLength :: Double
       focalLength = 1.0
@@ -66,7 +67,8 @@ mkCamera aspectRatio imageWidth =
           cameraPixelDeltaU = pixelDeltaU,
           cameraPixelDeltaV = pixelDeltaV,
           cameraSamplesPerPixel = samplesPerPixel,
-          cameraPixelSamplesScale = 1 / fromIntegral samplesPerPixel
+          cameraPixelSamplesScale = 1 / fromIntegral samplesPerPixel,
+          cameraMaxDepth = maxDepth
         }
 
 render :: Camera -> AnyHittable -> IO ()
@@ -90,7 +92,7 @@ getRandomColor :: Camera -> AnyHittable -> Int -> Int -> IO Color
 getRandomColor cam world i j =
   do
     randomRay <- getRandomRay cam i j
-    rayColor randomRay world
+    rayColor randomRay (cameraMaxDepth cam) world
 
 getRandomRay :: Camera -> Int -> Int -> IO Ray
 getRandomRay (Camera {cameraCenter, cameraPixel00Loc, cameraPixelDeltaU, cameraPixelDeltaV}) i j = do
@@ -103,12 +105,13 @@ getRandomRay (Camera {cameraCenter, cameraPixel00Loc, cameraPixelDeltaU, cameraP
   where
     sampleSquare = (\x y -> Vec3 (x - 0.5) (y - 0.5) 0) <$> randomDoubleUnit <*> randomDoubleUnit
 
-rayColor :: Ray -> AnyHittable -> IO Color
-rayColor ray (AnyHittable world) =
+rayColor :: Ray -> Int -> AnyHittable -> IO Color
+rayColor _ 0 _ = return 0
+rayColor ray depth (AnyHittable world) =
   case hit world ray (Interval 0 posInfinity) of
     Just record -> do
       direction <- getRandomOnHemisphere (hitRecordNormal record)
-      mulVec3 0.5 <$> rayColor (Ray (hitRecordP record) direction) (AnyHittable world)
+      mulVec3 0.5 <$> rayColor (Ray (hitRecordP record) direction) (depth - 1) (AnyHittable world)
     Nothing ->
       let a = (1 + y (unitVec3 (direction ray))) / 2
        in return $ (1 - a) `mulVec3` 1 + a `mulVec3` Vec3 0.5 0.7 1.0

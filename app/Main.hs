@@ -20,7 +20,7 @@ world =
     ]
 
 camera :: Camera
-camera = mkCamera (16 / 9) 256
+camera = mkCamera (16 / 9) 256 50
 
 main :: IO ()
 main = render camera world
