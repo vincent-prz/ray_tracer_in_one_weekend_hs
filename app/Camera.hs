@@ -3,12 +3,12 @@
 module Camera where
 
 import Color
-import Hittable (AnyHittable (AnyHittable), HitRecord (hitRecordNormal), Hittable (hit))
+import Hittable (AnyHittable (AnyHittable), HitRecord (hitRecordNormal, hitRecordP), Hittable (hit))
 import Interval
 import Ray
 import System.IO (hPutStrLn, stderr)
 import Utils (posInfinity, randomDoubleUnit)
-import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
+import Vec3 (Point, Vec3 (..), divVec3, getRandomOnHemisphere, mulVec3, unitVec3)
 
 data Camera = Camera
   { cameraAspectRatio :: Double,
@@ -90,7 +90,7 @@ getRandomColor :: Camera -> AnyHittable -> Int -> Int -> IO Color
 getRandomColor cam world i j =
   do
     randomRay <- getRandomRay cam i j
-    return (rayColor randomRay world)
+    rayColor randomRay world
 
 getRandomRay :: Camera -> Int -> Int -> IO Ray
 getRandomRay (Camera {cameraCenter, cameraPixel00Loc, cameraPixelDeltaU, cameraPixelDeltaV}) i j = do
@@ -103,10 +103,12 @@ getRandomRay (Camera {cameraCenter, cameraPixel00Loc, cameraPixelDeltaU, cameraP
   where
     sampleSquare = (\x y -> Vec3 (x - 0.5) (y - 0.5) 0) <$> randomDoubleUnit <*> randomDoubleUnit
 
-rayColor :: Ray -> AnyHittable -> Color
+rayColor :: Ray -> AnyHittable -> IO Color
 rayColor ray (AnyHittable world) =
   case hit world ray (Interval 0 posInfinity) of
-    Just record -> 0.5 `mulVec3` (hitRecordNormal record + 1)
+    Just record -> do
+      direction <- getRandomOnHemisphere (hitRecordNormal record)
+      mulVec3 0.5 <$> rayColor (Ray (hitRecordP record) direction) (AnyHittable world)
     Nothing ->
       let a = (1 + y (unitVec3 (direction ray))) / 2
-       in (1 - a) `mulVec3` 1 + a `mulVec3` Vec3 0.5 0.7 1.0
+       in return $ (1 - a) `mulVec3` 1 + a `mulVec3` Vec3 0.5 0.7 1.0

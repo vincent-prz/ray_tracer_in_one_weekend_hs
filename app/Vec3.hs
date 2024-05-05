@@ -2,6 +2,8 @@
 
 module Vec3 where
 
+import Utils (randomDouble, randomDoubleUnit)
+
 data Vec3 = Vec3 {x :: Double, y :: Double, z :: Double} deriving (Show)
 
 type Point = Vec3
@@ -40,3 +42,26 @@ unitVec3 v = v `divVec3` lengthVec3 v
 
 applyToVec3 :: Vec3 -> (Double -> Double) -> Vec3
 applyToVec3 (Vec3 x y z) f = Vec3 (f x) (f y) (f z)
+
+randomUnitVec3 :: IO Vec3
+randomUnitVec3 = Vec3 <$> randomDoubleUnit <*> randomDoubleUnit <*> randomDoubleUnit
+
+randomVec3 :: Double -> Double -> IO Vec3
+randomVec3 hi lo = Vec3 <$> randomDouble hi lo <*> randomDouble hi lo <*> randomDouble hi lo
+
+getRandomVec3InUnitSphere :: IO Vec3
+getRandomVec3InUnitSphere = do
+  v <- randomVec3 (-1) 1
+  if lengthSquared v < 1
+    then return v
+    else getRandomVec3InUnitSphere
+
+getRandomUnitVector :: IO Vec3
+getRandomUnitVector = unitVec3 <$> getRandomVec3InUnitSphere
+
+getRandomOnHemisphere :: Vec3 -> IO Vec3
+getRandomOnHemisphere n = do
+  v <- getRandomUnitVector
+  if dotProduct n v > 0
+    then return v
+    else return (-v)
