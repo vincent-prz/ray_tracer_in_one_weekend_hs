@@ -108,7 +108,7 @@ getRandomRay (Camera {cameraCenter, cameraPixel00Loc, cameraPixelDeltaU, cameraP
 rayColor :: Ray -> Int -> AnyHittable -> IO Color
 rayColor _ 0 _ = return 0
 rayColor ray depth (AnyHittable world) =
-  case hit world ray (Interval 0 posInfinity) of
+  case hit world ray (Interval 0.001 posInfinity) of
     Just record -> do
       direction <- getRandomOnHemisphere (hitRecordNormal record)
       mulVec3 0.5 <$> rayColor (Ray (hitRecordP record) direction) (depth - 1) (AnyHittable world)
