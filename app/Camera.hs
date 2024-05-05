@@ -8,7 +8,7 @@ import Interval
 import Ray
 import System.IO (hPutStrLn, stderr)
 import Utils (posInfinity, randomDoubleUnit)
-import Vec3 (Point, Vec3 (..), divVec3, getRandomOnHemisphere, mulVec3, unitVec3)
+import Vec3 (Point, Vec3 (..), divVec3, getRandomUnitVector, mulVec3, unitVec3)
 
 data Camera = Camera
   { cameraAspectRatio :: Double,
@@ -110,7 +110,7 @@ rayColor _ 0 _ = return 0
 rayColor ray depth (AnyHittable world) =
   case hit world ray (Interval 0.001 posInfinity) of
     Just record -> do
-      direction <- getRandomOnHemisphere (hitRecordNormal record)
+      direction <- (+ hitRecordNormal record) <$> getRandomUnitVector
       mulVec3 0.5 <$> rayColor (Ray (hitRecordP record) direction) (depth - 1) (AnyHittable world)
     Nothing ->
       let a = (1 + y (unitVec3 (direction ray))) / 2
