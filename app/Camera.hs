@@ -23,8 +23,8 @@ data Camera = Camera
     cameraMaxDepth :: Int
   }
 
-mkCamera :: Double -> Int -> Int -> Camera
-mkCamera aspectRatio imageWidth maxDepth =
+mkCamera :: Double -> Int -> Int -> Int -> Camera
+mkCamera aspectRatio imageWidth samplesPerPixel maxDepth =
   let imageHeight = let val = round (fromIntegral imageWidth / aspectRatio) in max val 1
       focalLength :: Double
       focalLength = 1.0
@@ -55,9 +55,6 @@ mkCamera aspectRatio imageWidth maxDepth =
 
       pixel00Loc :: Vec3
       pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
-
-      samplesPerPixel :: Int
-      samplesPerPixel = 10
    in Camera
         { cameraAspectRatio = aspectRatio,
           cameraImageWidth = imageWidth,
