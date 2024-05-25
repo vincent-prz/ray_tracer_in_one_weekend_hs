@@ -6,6 +6,8 @@ module Hittable where
 
 import Control.Applicative (Alternative ((<|>)))
 import Interval (Interval (Interval))
+-- the SOURCE pragma is in order to avoid circular dependency
+import {-# SOURCE #-} Material (Material)
 import Ray
 import Vec3
 
@@ -15,22 +17,24 @@ class Hittable a where
 -- Define an existential wrapper type to allow heterogeneous lists of Hittables.
 data AnyHittable = forall a. (Hittable a) => AnyHittable a
 
-data HitRecord = HitRecord
+data HitRecord = forall mat. (Material mat) => HitRecord
   { hitRecordP :: Point,
     hitRecordNormal :: Vec3,
     hitRecordT :: Double,
-    hitRecordfrontFace :: Bool
+    hitRecordfrontFace :: Bool,
+    hitRecordMat :: mat
   }
 
-mkHitRecord :: Point -> Vec3 -> Double -> Ray -> HitRecord
-mkHitRecord p outwardNormal t ray =
+mkHitRecord :: (Material mat) => Point -> Vec3 -> Double -> Ray -> mat -> HitRecord
+mkHitRecord p outwardNormal t ray mat =
   let frontFace = dotProduct outwardNormal (direction ray) < 0
       normal = if frontFace then outwardNormal else -outwardNormal
    in HitRecord
         { hitRecordP = p,
           hitRecordNormal = normal,
           hitRecordT = t,
-          hitRecordfrontFace = frontFace
+          hitRecordfrontFace = frontFace,
+          hitRecordMat = mat
         }
 
 instance Hittable [AnyHittable] where

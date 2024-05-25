@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
@@ -5,14 +6,15 @@ module Sphere where
 
 import Hittable (HitRecord (..), Hittable (hit), mkHitRecord)
 import Interval (Interval, findFirstInInterval)
+import Material (Material)
 import Ray
 import Vec3 (Point, dotProduct, unitVec3)
 
-data Sphere = Sphere {center :: Point, radius :: Double}
+data Sphere = forall mat. (Material mat) => Sphere {center :: Point, radius :: Double, sphereMat :: mat}
 
 instance Hittable Sphere where
   hit :: Sphere -> Ray -> Interval -> Maybe HitRecord
-  hit (Sphere {radius, center}) ray interval =
+  hit (Sphere {radius, center, sphereMat}) ray interval =
     let d = direction ray
         qc = center - origin ray
         a = dotProduct d d
@@ -25,5 +27,5 @@ instance Hittable Sphere where
             root <- findFirstInInterval interval [(h - sqrt discrimininant) / a, (h + sqrt discrimininant) / a]
             let intersection = rayAt ray root
             let n = unitVec3 (intersection - center)
-            return $ mkHitRecord intersection n root ray
+            return $ mkHitRecord intersection n root ray sphereMat
           else Nothing

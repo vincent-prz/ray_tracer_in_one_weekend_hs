@@ -67,6 +67,7 @@ executable rayTracerInOneWeekend
         Color
         Hittable
         Interval
+        Material
         Ray
         Sphere
         Utils

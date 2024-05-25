@@ -3,12 +3,13 @@
 module Camera where
 
 import Color
-import Hittable (AnyHittable (AnyHittable), HitRecord (hitRecordNormal, hitRecordP), Hittable (hit))
+import Hittable (AnyHittable (AnyHittable), HitRecord (HitRecord, hitRecordMat, hitRecordP), Hittable (hit))
 import Interval
+import Material (Material (scatter))
 import Ray
 import System.IO (hPutStrLn, stderr)
 import Utils (posInfinity, randomDoubleUnit)
-import Vec3 (Point, Vec3 (..), divVec3, getRandomUnitVector, mulVec3, unitVec3)
+import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
 
 data Camera = Camera
   { cameraAspectRatio :: Double,
@@ -106,9 +107,12 @@ rayColor :: Ray -> Int -> AnyHittable -> IO Color
 rayColor _ 0 _ = return 0
 rayColor ray depth (AnyHittable world) =
   case hit world ray (Interval 0.001 posInfinity) of
-    Just record -> do
-      direction <- (+ hitRecordNormal record) <$> getRandomUnitVector
-      mulVec3 0.5 <$> rayColor (Ray (hitRecordP record) direction) (depth - 1) (AnyHittable world)
+    Just record@(HitRecord {hitRecordP, hitRecordMat}) -> do
+      scattered <- scatter hitRecordMat ray record
+      case scattered of
+        Nothing -> return 0
+        Just (attenuation, Ray _ direction) ->
+          (* attenuation) <$> rayColor (Ray hitRecordP direction) (depth - 1) (AnyHittable world)
     Nothing ->
       let a = (1 + y (unitVec3 (direction ray))) / 2
        in return $ (1 - a) `mulVec3` 1 + a `mulVec3` Vec3 0.5 0.7 1.0
