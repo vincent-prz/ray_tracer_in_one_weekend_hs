@@ -65,3 +65,8 @@ getRandomOnHemisphere n = do
   if dotProduct n v > 0
     then return v
     else return (-v)
+
+isVec3NearZero :: Vec3 -> Bool
+isVec3NearZero (Vec3 x y z) = (abs x < threshold) && (abs y < threshold) && (abs z < threshold)
+  where
+    threshold = 1e-8
