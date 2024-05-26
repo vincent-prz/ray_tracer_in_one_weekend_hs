@@ -6,7 +6,7 @@ module Material where
 import Color (Color)
 import Hittable (HitRecord (..), hitRecordNormal, hitRecordP)
 import Ray (Ray (Ray, direction, origin))
-import Vec3 (getRandomVec3InUnitSphere, isVec3NearZero, reflect)
+import Vec3 (dotProduct, getRandomVec3InUnitSphere, isVec3NearZero, mulVec3, reflect, unitVec3)
 
 class Material a where
   scatter :: a -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
@@ -22,10 +22,17 @@ instance Material Lambertian where
       let scatterDirection = if isVec3NearZero direction then hitRecordNormal else direction
       return $ Just (albedo, Ray {origin = hitRecordP, direction = scatterDirection})
 
-newtype Metal = Metal Color
+data Metal = Metal Color Double
 
 instance Material Metal where
   scatter :: Metal -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
-  scatter (Metal albedo) rayIn (HitRecord {hitRecordP, hitRecordNormal}) =
-    let reflectedRay = Ray hitRecordP (reflect (direction rayIn) hitRecordNormal)
-     in return $ Just (albedo, reflectedRay)
+  scatter (Metal albedo fuzz) rayIn (HitRecord {hitRecordP, hitRecordNormal}) =
+    do
+      let normalizedFuzz = max fuzz 1
+      let reflected = reflect (direction rayIn) hitRecordNormal
+      randomVec <- getRandomVec3InUnitSphere
+      let reflectedWithFuzz = unitVec3 reflected + mulVec3 normalizedFuzz randomVec
+      let scattered = Ray hitRecordP reflectedWithFuzz
+      if dotProduct (direction scattered) hitRecordNormal > 0
+        then return $ Just (albedo, scattered)
+        else return Nothing

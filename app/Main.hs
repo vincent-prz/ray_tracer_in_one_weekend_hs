@@ -20,10 +20,10 @@ materialCenter :: Lambertian
 materialCenter = Lambertian (Vec3 0.1 0.2 0.5)
 
 materialLeft :: Metal
-materialLeft = Metal (Vec3 0.8 0.8 0.8)
+materialLeft = Metal (Vec3 0.8 0.8 0.8) 0.3
 
 materialRight :: Metal
-materialRight = Metal (Vec3 0.8 0.6 0.2)
+materialRight = Metal (Vec3 0.8 0.6 0.2) 1.0
 
 world :: AnyHittable
 world =
