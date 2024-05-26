@@ -67,3 +67,6 @@ isVec3NearZero :: Vec3 -> Bool
 isVec3NearZero (Vec3 x y z) = (abs x < threshold) && (abs y < threshold) && (abs z < threshold)
   where
     threshold = 1e-8
+
+reflect :: Vec3 -> Vec3 -> Vec3
+reflect v n = v - mulVec3 (2 * dotProduct n v) n
