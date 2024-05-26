@@ -3,7 +3,7 @@
 module Camera where
 
 import Color
-import Hittable (AnyHittable (AnyHittable), HitRecord (HitRecord, hitRecordMat, hitRecordP), Hittable (hit))
+import Hittable (AnyHittable (AnyHittable), HitRecord (HitRecord, hitRecordMat), Hittable (hit))
 import Interval
 import Material (Material (scatter))
 import Ray
@@ -107,12 +107,12 @@ rayColor :: Ray -> Int -> AnyHittable -> IO Color
 rayColor _ 0 _ = return 0
 rayColor ray depth (AnyHittable world) =
   case hit world ray (Interval 0.001 posInfinity) of
-    Just record@(HitRecord {hitRecordP, hitRecordMat}) -> do
+    Just record@(HitRecord {hitRecordMat}) -> do
       scattered <- scatter hitRecordMat ray record
       case scattered of
         Nothing -> return 0
-        Just (attenuation, Ray _ direction) ->
-          (* attenuation) <$> rayColor (Ray hitRecordP direction) (depth - 1) (AnyHittable world)
+        Just (attenuation, scatteredRay) ->
+          (* attenuation) <$> rayColor scatteredRay (depth - 1) (AnyHittable world)
     Nothing ->
       let a = (1 + y (unitVec3 (direction ray))) / 2
        in return $ (1 - a) `mulVec3` 1 + a `mulVec3` Vec3 0.5 0.7 1.0

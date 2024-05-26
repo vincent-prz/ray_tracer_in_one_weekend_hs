@@ -43,9 +43,6 @@ unitVec3 v = v `divVec3` lengthVec3 v
 applyToVec3 :: Vec3 -> (Double -> Double) -> Vec3
 applyToVec3 (Vec3 x y z) f = Vec3 (f x) (f y) (f z)
 
-randomUnitVec3 :: IO Vec3
-randomUnitVec3 = Vec3 <$> randomDoubleUnit <*> randomDoubleUnit <*> randomDoubleUnit
-
 randomVec3 :: Double -> Double -> IO Vec3
 randomVec3 hi lo = Vec3 <$> randomDouble hi lo <*> randomDouble hi lo <*> randomDouble hi lo
 
