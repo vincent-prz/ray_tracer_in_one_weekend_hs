@@ -20,7 +20,7 @@ materialCenter :: Lambertian
 materialCenter = Lambertian (Vec3 0.1 0.2 0.5)
 
 materialLeft :: Dielectric
-materialLeft = Dielectric 1.5
+materialLeft = Dielectric (1.0 / 1.33)
 
 materialRight :: Metal
 materialRight = Metal (Vec3 0.8 0.6 0.2) 1.0

@@ -44,6 +44,12 @@ instance Material Dielectric where
   scatter (Dielectric refractionIndex) rayIn (HitRecord {hitRecordNormal, hitRecordfrontFace, hitRecordP}) =
     let actualRefractionIndex = if hitRecordfrontFace then 1 / refractionIndex else refractionIndex
         unitDirection = unitVec3 (direction rayIn)
-        refracted = refract unitDirection hitRecordNormal actualRefractionIndex
-        scattered = Ray hitRecordP refracted
+        cosTheta = min (dotProduct (-unitDirection) hitRecordNormal) 1.0
+        sinTheta = sqrt (1 - cosTheta * cosTheta)
+        cannotRefract = actualRefractionIndex * sinTheta > 1
+        scatteredDir =
+          if cannotRefract
+            then reflect unitDirection hitRecordNormal
+            else refract unitDirection hitRecordNormal actualRefractionIndex
+        scattered = Ray hitRecordP scatteredDir
      in return $ Just (Vec3 1 1 1, scattered)
