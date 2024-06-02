@@ -2,7 +2,7 @@ module Main where
 
 import Camera (Camera, mkCamera, render)
 import Hittable (AnyHittable (AnyHittable))
-import Material (Lambertian (Lambertian), Metal (Metal))
+import Material (Dielectric (Dielectric), Lambertian (Lambertian), Metal (Metal))
 import Sphere (Sphere (..))
 import Vec3
 
@@ -19,8 +19,8 @@ materialGround = Lambertian (Vec3 0.8 0.8 0)
 materialCenter :: Lambertian
 materialCenter = Lambertian (Vec3 0.1 0.2 0.5)
 
-materialLeft :: Metal
-materialLeft = Metal (Vec3 0.8 0.8 0.8) 0.3
+materialLeft :: Dielectric
+materialLeft = Dielectric 1.5
 
 materialRight :: Metal
 materialRight = Metal (Vec3 0.8 0.6 0.2) 1.0

@@ -70,3 +70,10 @@ isVec3NearZero (Vec3 x y z) = (abs x < threshold) && (abs y < threshold) && (abs
 
 reflect :: Vec3 -> Vec3 -> Vec3
 reflect v n = v - mulVec3 (2 * dotProduct n v) n
+
+refract :: Vec3 -> Vec3 -> Double -> Vec3
+refract uv n refractionIndex =
+  let cosTheta = min (dotProduct (-uv) n) 1.0
+      rOutPerp = mulVec3 refractionIndex (uv + mulVec3 cosTheta n)
+      rOutParallel = mulVec3 (-sqrt (abs (1 - lengthSquared rOutPerp))) n
+   in rOutPerp + rOutParallel

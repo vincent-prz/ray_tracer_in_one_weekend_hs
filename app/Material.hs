@@ -6,7 +6,7 @@ module Material where
 import Color (Color)
 import Hittable (HitRecord (..), hitRecordNormal, hitRecordP)
 import Ray (Ray (Ray, direction, origin))
-import Vec3 (dotProduct, getRandomVec3InUnitSphere, isVec3NearZero, mulVec3, reflect, unitVec3)
+import Vec3 (Vec3 (Vec3), dotProduct, getRandomVec3InUnitSphere, isVec3NearZero, mulVec3, reflect, refract, unitVec3)
 
 class Material a where
   scatter :: a -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
@@ -36,3 +36,14 @@ instance Material Metal where
       if dotProduct (direction scattered) hitRecordNormal > 0
         then return $ Just (albedo, scattered)
         else return Nothing
+
+newtype Dielectric = Dielectric Double
+
+instance Material Dielectric where
+  scatter :: Dielectric -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
+  scatter (Dielectric refractionIndex) rayIn (HitRecord {hitRecordNormal, hitRecordfrontFace, hitRecordP}) =
+    let actualRefractionIndex = if hitRecordfrontFace then 1 / refractionIndex else refractionIndex
+        unitDirection = unitVec3 (direction rayIn)
+        refracted = refract unitDirection hitRecordNormal actualRefractionIndex
+        scattered = Ray hitRecordP refracted
+     in return $ Just (Vec3 1 1 1, scattered)
