@@ -20,7 +20,10 @@ materialCenter :: Lambertian
 materialCenter = Lambertian (Vec3 0.1 0.2 0.5)
 
 materialLeft :: Dielectric
-materialLeft = Dielectric (1.0 / 1.33)
+materialLeft = Dielectric 1.5
+
+materialBubble :: Dielectric
+materialBubble = Dielectric (1 / 1.5)
 
 materialRight :: Metal
 materialRight = Metal (Vec3 0.8 0.6 0.2) 1.0
@@ -31,6 +34,7 @@ world =
     [ AnyHittable Sphere {center = Vec3 0 (-100.5) (-1), radius = 100, sphereMat = materialGround},
       AnyHittable Sphere {center = Vec3 0 0 (-1.2), radius = 0.5, sphereMat = materialCenter},
       AnyHittable Sphere {center = Vec3 (-1) 0 (-1), radius = 0.5, sphereMat = materialLeft},
+      AnyHittable Sphere {center = Vec3 (-1) 0 (-1), radius = 0.4, sphereMat = materialBubble},
       AnyHittable Sphere {center = Vec3 1 0 (-1), radius = 0.5, sphereMat = materialRight}
     ]
 

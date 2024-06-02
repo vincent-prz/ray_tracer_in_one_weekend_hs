@@ -4,8 +4,10 @@
 module Material where
 
 import Color (Color)
+import GHC.Float (powerDouble)
 import Hittable (HitRecord (..), hitRecordNormal, hitRecordP)
 import Ray (Ray (Ray, direction, origin))
+import Utils (randomDoubleUnit)
 import Vec3 (Vec3 (Vec3), dotProduct, getRandomVec3InUnitSphere, isVec3NearZero, mulVec3, reflect, refract, unitVec3)
 
 class Material a where
@@ -47,9 +49,18 @@ instance Material Dielectric where
         cosTheta = min (dotProduct (-unitDirection) hitRecordNormal) 1.0
         sinTheta = sqrt (1 - cosTheta * cosTheta)
         cannotRefract = actualRefractionIndex * sinTheta > 1
-        scatteredDir =
-          if cannotRefract
-            then reflect unitDirection hitRecordNormal
-            else refract unitDirection hitRecordNormal actualRefractionIndex
-        scattered = Ray hitRecordP scatteredDir
-     in return $ Just (Vec3 1 1 1, scattered)
+     in do
+          randValue <- randomDoubleUnit
+          let scatteredDir =
+                if cannotRefract || reflectance cosTheta actualRefractionIndex > randValue
+                  then reflect unitDirection hitRecordNormal
+                  else refract unitDirection hitRecordNormal actualRefractionIndex
+          let scattered = Ray hitRecordP scatteredDir
+          return $ Just (Vec3 1 1 1, scattered)
+
+-- Schlick approximation
+reflectance :: Double -> Double -> Double
+reflectance cosine refactionIndex =
+  let r0 = (1 - refactionIndex) / (1 + refactionIndex)
+      r1 = r0 * r0
+   in r1 + (1 - r1) * powerDouble (1 - cosine) 5
