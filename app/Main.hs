@@ -2,7 +2,7 @@ module Main where
 
 import Camera (Camera, mkCamera, render)
 import Hittable (AnyHittable (AnyHittable))
-import Material (Dielectric (Dielectric), Lambertian (Lambertian), Metal (Metal))
+import Material (Lambertian (Lambertian))
 import Sphere (Sphere (..))
 import Vec3
 
@@ -13,33 +13,24 @@ aspectRatio = 16 / 9
 imageWidth :: Int
 imageWidth = 256
 
-materialGround :: Lambertian
-materialGround = Lambertian (Vec3 0.8 0.8 0)
+materialLeft :: Lambertian
+materialLeft = Lambertian (Vec3 0 0 1)
 
-materialCenter :: Lambertian
-materialCenter = Lambertian (Vec3 0.1 0.2 0.5)
+materialRight :: Lambertian
+materialRight = Lambertian (Vec3 1 0 0)
 
-materialLeft :: Dielectric
-materialLeft = Dielectric 1.5
-
-materialBubble :: Dielectric
-materialBubble = Dielectric (1 / 1.5)
-
-materialRight :: Metal
-materialRight = Metal (Vec3 0.8 0.6 0.2) 1.0
+r :: Double
+r = cos (pi / 4)
 
 world :: AnyHittable
 world =
   AnyHittable
-    [ AnyHittable Sphere {center = Vec3 0 (-100.5) (-1), radius = 100, sphereMat = materialGround},
-      AnyHittable Sphere {center = Vec3 0 0 (-1.2), radius = 0.5, sphereMat = materialCenter},
-      AnyHittable Sphere {center = Vec3 (-1) 0 (-1), radius = 0.5, sphereMat = materialLeft},
-      AnyHittable Sphere {center = Vec3 (-1) 0 (-1), radius = 0.4, sphereMat = materialBubble},
-      AnyHittable Sphere {center = Vec3 1 0 (-1), radius = 0.5, sphereMat = materialRight}
+    [ AnyHittable Sphere {center = Vec3 (-r) 0 (-1), radius = r, sphereMat = materialLeft},
+      AnyHittable Sphere {center = Vec3 r 0 (-1), radius = r, sphereMat = materialRight}
     ]
 
 camera :: Camera
-camera = mkCamera (16 / 9) 256 100 50
+camera = mkCamera (16 / 9) 256 100 50 90
 
 main :: IO ()
 main = render camera world

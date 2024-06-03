@@ -14,3 +14,6 @@ randomDouble hi lo = do
 
 randomDoubleUnit :: IO Double
 randomDoubleUnit = randomDouble 0 1
+
+degreesToRadian :: Double -> Double
+degreesToRadian angle = angle * (pi / 180)

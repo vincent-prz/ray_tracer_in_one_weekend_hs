@@ -8,7 +8,7 @@ import Interval
 import Material (Material (scatter))
 import Ray
 import System.IO (hPutStrLn, stderr)
-import Utils (posInfinity, randomDoubleUnit)
+import Utils (degreesToRadian, posInfinity, randomDoubleUnit)
 import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
 
 data Camera = Camera
@@ -24,14 +24,18 @@ data Camera = Camera
     cameraMaxDepth :: Int
   }
 
-mkCamera :: Double -> Int -> Int -> Int -> Camera
-mkCamera aspectRatio imageWidth samplesPerPixel maxDepth =
+-- FIXME: too many parameters
+mkCamera :: Double -> Int -> Int -> Int -> Double -> Camera
+mkCamera aspectRatio imageWidth samplesPerPixel maxDepth verticalAngle =
   let imageHeight = let val = round (fromIntegral imageWidth / aspectRatio) in max val 1
       focalLength :: Double
       focalLength = 1.0
 
+      theta :: Double
+      theta = degreesToRadian verticalAngle
+
       viewPortHeight :: Double
-      viewPortHeight = 2.0
+      viewPortHeight = 2.0 * tan (theta / 2) * focalLength
 
       viewPortWidth :: Double
       viewPortWidth = viewPortHeight * (fromIntegral imageWidth / fromIntegral imageHeight)
