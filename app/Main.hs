@@ -1,6 +1,6 @@
 module Main where
 
-import Camera (Camera, mkCamera, render)
+import Camera (Camera, CameraArgs (..), mkCamera, render)
 import Hittable (AnyHittable (AnyHittable))
 import Material (Lambertian (Lambertian))
 import Sphere (Sphere (..))
@@ -30,7 +30,15 @@ world =
     ]
 
 camera :: Camera
-camera = mkCamera (16 / 9) 256 100 50 90
+camera =
+  mkCamera
+    CameraArgs
+      { cameraArgsAspectRatio = 16 / 9,
+        cameraArgsImageWidth = 256,
+        cameraArgsSamplesPerPixel = 100,
+        cameraArgsMaxDepth = 50,
+        cameraArgsVerticalAngle = 90
+      }
 
 main :: IO ()
 main = render camera world

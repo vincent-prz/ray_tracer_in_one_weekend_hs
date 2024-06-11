@@ -11,6 +11,14 @@ import System.IO (hPutStrLn, stderr)
 import Utils (degreesToRadian, posInfinity, randomDoubleUnit)
 import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
 
+data CameraArgs = CameraArgs
+  { cameraArgsAspectRatio :: Double,
+    cameraArgsImageWidth :: Int,
+    cameraArgsSamplesPerPixel :: Int,
+    cameraArgsMaxDepth :: Int,
+    cameraArgsVerticalAngle :: Double
+  }
+
 data Camera = Camera
   { cameraAspectRatio :: Double,
     cameraImageWidth :: Int,
@@ -24,21 +32,20 @@ data Camera = Camera
     cameraMaxDepth :: Int
   }
 
--- FIXME: too many parameters
-mkCamera :: Double -> Int -> Int -> Int -> Double -> Camera
-mkCamera aspectRatio imageWidth samplesPerPixel maxDepth verticalAngle =
-  let imageHeight = let val = round (fromIntegral imageWidth / aspectRatio) in max val 1
+mkCamera :: CameraArgs -> Camera
+mkCamera (CameraArgs {cameraArgsAspectRatio, cameraArgsImageWidth, cameraArgsSamplesPerPixel, cameraArgsMaxDepth, cameraArgsVerticalAngle}) =
+  let imageHeight = let val = round (fromIntegral cameraArgsImageWidth / cameraArgsAspectRatio) in max val 1
       focalLength :: Double
       focalLength = 1.0
 
       theta :: Double
-      theta = degreesToRadian verticalAngle
+      theta = degreesToRadian cameraArgsVerticalAngle
 
       viewPortHeight :: Double
       viewPortHeight = 2.0 * tan (theta / 2) * focalLength
 
       viewPortWidth :: Double
-      viewPortWidth = viewPortHeight * (fromIntegral imageWidth / fromIntegral imageHeight)
+      viewPortWidth = viewPortHeight * (fromIntegral cameraArgsImageWidth / fromIntegral imageHeight)
 
       center :: Point
       center = 0
@@ -50,7 +57,7 @@ mkCamera aspectRatio imageWidth samplesPerPixel maxDepth verticalAngle =
       viewPortV = Vec3 0 (-viewPortHeight) 0
 
       pixelDeltaU :: Vec3
-      pixelDeltaU = viewPortU `divVec3` fromIntegral imageWidth
+      pixelDeltaU = viewPortU `divVec3` fromIntegral cameraArgsImageWidth
 
       pixelDeltaV :: Vec3
       pixelDeltaV = viewPortV `divVec3` fromIntegral imageHeight
@@ -61,16 +68,16 @@ mkCamera aspectRatio imageWidth samplesPerPixel maxDepth verticalAngle =
       pixel00Loc :: Vec3
       pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
    in Camera
-        { cameraAspectRatio = aspectRatio,
-          cameraImageWidth = imageWidth,
+        { cameraAspectRatio = cameraArgsAspectRatio,
+          cameraImageWidth = cameraArgsImageWidth,
           cameraImageheight = imageHeight,
           cameraCenter = center,
           cameraPixel00Loc = pixel00Loc,
           cameraPixelDeltaU = pixelDeltaU,
           cameraPixelDeltaV = pixelDeltaV,
-          cameraSamplesPerPixel = samplesPerPixel,
-          cameraPixelSamplesScale = 1 / fromIntegral samplesPerPixel,
-          cameraMaxDepth = maxDepth
+          cameraSamplesPerPixel = cameraArgsSamplesPerPixel,
+          cameraPixelSamplesScale = 1 / fromIntegral cameraArgsSamplesPerPixel,
+          cameraMaxDepth = cameraArgsMaxDepth
         }
 
 render :: Camera -> AnyHittable -> IO ()
