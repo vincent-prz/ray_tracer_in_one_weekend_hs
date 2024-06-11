@@ -37,7 +37,10 @@ camera =
         cameraArgsImageWidth = 256,
         cameraArgsSamplesPerPixel = 100,
         cameraArgsMaxDepth = 50,
-        cameraArgsVerticalAngle = 90
+        cameraArgsVerticalAngle = 90,
+        cameraArgsLookFrom = 0,
+        cameraArgsLookAt = Vec3 0 0 (-1),
+        cameraArgsVup = Vec3 0 1 0
       }
 
 main :: IO ()

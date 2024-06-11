@@ -9,14 +9,18 @@ import Material (Material (scatter))
 import Ray
 import System.IO (hPutStrLn, stderr)
 import Utils (degreesToRadian, posInfinity, randomDoubleUnit)
-import Vec3 (Point, Vec3 (..), divVec3, mulVec3, unitVec3)
+import Vec3 (Point, Vec3 (..), crossVec3, divVec3, lengthVec3, mulVec3, unitVec3)
 
+-- TODO: add default args
 data CameraArgs = CameraArgs
   { cameraArgsAspectRatio :: Double,
     cameraArgsImageWidth :: Int,
     cameraArgsSamplesPerPixel :: Int,
     cameraArgsMaxDepth :: Int,
-    cameraArgsVerticalAngle :: Double
+    cameraArgsVerticalAngle :: Double,
+    cameraArgsLookFrom :: Point,
+    cameraArgsLookAt :: Point,
+    cameraArgsVup :: Vec3
   }
 
 data Camera = Camera
@@ -29,56 +33,82 @@ data Camera = Camera
     cameraPixelDeltaV :: Vec3,
     cameraSamplesPerPixel :: Int,
     cameraPixelSamplesScale :: Double,
-    cameraMaxDepth :: Int
+    cameraMaxDepth :: Int,
+    cameraU :: Vec3,
+    cameraV :: Vec3,
+    cameraW :: Vec3
   }
 
 mkCamera :: CameraArgs -> Camera
-mkCamera (CameraArgs {cameraArgsAspectRatio, cameraArgsImageWidth, cameraArgsSamplesPerPixel, cameraArgsMaxDepth, cameraArgsVerticalAngle}) =
-  let imageHeight = let val = round (fromIntegral cameraArgsImageWidth / cameraArgsAspectRatio) in max val 1
-      focalLength :: Double
-      focalLength = 1.0
+mkCamera
+  ( CameraArgs
+      { cameraArgsAspectRatio,
+        cameraArgsImageWidth,
+        cameraArgsSamplesPerPixel,
+        cameraArgsMaxDepth,
+        cameraArgsVerticalAngle,
+        cameraArgsLookFrom,
+        cameraArgsLookAt,
+        cameraArgsVup
+      }
+    ) =
+    let imageHeight = let val = round (fromIntegral cameraArgsImageWidth / cameraArgsAspectRatio) in max val 1
+        focalLength :: Double
+        focalLength = lengthVec3 (cameraArgsLookFrom - cameraArgsLookAt)
 
-      theta :: Double
-      theta = degreesToRadian cameraArgsVerticalAngle
+        theta :: Double
+        theta = degreesToRadian cameraArgsVerticalAngle
 
-      viewPortHeight :: Double
-      viewPortHeight = 2.0 * tan (theta / 2) * focalLength
+        viewPortHeight :: Double
+        viewPortHeight = 2.0 * tan (theta / 2) * focalLength
 
-      viewPortWidth :: Double
-      viewPortWidth = viewPortHeight * (fromIntegral cameraArgsImageWidth / fromIntegral imageHeight)
+        viewPortWidth :: Double
+        viewPortWidth = viewPortHeight * (fromIntegral cameraArgsImageWidth / fromIntegral imageHeight)
 
-      center :: Point
-      center = 0
+        center :: Point
+        center = cameraArgsLookFrom
 
-      viewPortU :: Vec3
-      viewPortU = Vec3 viewPortWidth 0 0
+        w :: Vec3
+        w = unitVec3 (cameraArgsLookFrom - cameraArgsLookAt)
 
-      viewPortV :: Vec3
-      viewPortV = Vec3 0 (-viewPortHeight) 0
+        u :: Vec3
+        u = unitVec3 (crossVec3 cameraArgsVup w)
 
-      pixelDeltaU :: Vec3
-      pixelDeltaU = viewPortU `divVec3` fromIntegral cameraArgsImageWidth
+        v :: Vec3
+        v = crossVec3 w u
 
-      pixelDeltaV :: Vec3
-      pixelDeltaV = viewPortV `divVec3` fromIntegral imageHeight
+        viewPortU :: Vec3
+        viewPortU = mulVec3 viewPortWidth u
 
-      viewPortUpperLeft :: Vec3
-      viewPortUpperLeft = center - Vec3 0 0 focalLength - viewPortU `divVec3` 2 - viewPortV `divVec3` 2
+        viewPortV :: Vec3
+        viewPortV = -mulVec3 viewPortHeight v
 
-      pixel00Loc :: Vec3
-      pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
-   in Camera
-        { cameraAspectRatio = cameraArgsAspectRatio,
-          cameraImageWidth = cameraArgsImageWidth,
-          cameraImageheight = imageHeight,
-          cameraCenter = center,
-          cameraPixel00Loc = pixel00Loc,
-          cameraPixelDeltaU = pixelDeltaU,
-          cameraPixelDeltaV = pixelDeltaV,
-          cameraSamplesPerPixel = cameraArgsSamplesPerPixel,
-          cameraPixelSamplesScale = 1 / fromIntegral cameraArgsSamplesPerPixel,
-          cameraMaxDepth = cameraArgsMaxDepth
-        }
+        pixelDeltaU :: Vec3
+        pixelDeltaU = viewPortU `divVec3` fromIntegral cameraArgsImageWidth
+
+        pixelDeltaV :: Vec3
+        pixelDeltaV = viewPortV `divVec3` fromIntegral imageHeight
+
+        viewPortUpperLeft :: Vec3
+        viewPortUpperLeft = center - mulVec3 focalLength w - viewPortU `divVec3` 2 - viewPortV `divVec3` 2
+
+        pixel00Loc :: Vec3
+        pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
+     in Camera
+          { cameraAspectRatio = cameraArgsAspectRatio,
+            cameraImageWidth = cameraArgsImageWidth,
+            cameraImageheight = imageHeight,
+            cameraCenter = center,
+            cameraPixel00Loc = pixel00Loc,
+            cameraPixelDeltaU = pixelDeltaU,
+            cameraPixelDeltaV = pixelDeltaV,
+            cameraSamplesPerPixel = cameraArgsSamplesPerPixel,
+            cameraPixelSamplesScale = 1 / fromIntegral cameraArgsSamplesPerPixel,
+            cameraMaxDepth = cameraArgsMaxDepth,
+            cameraU = u,
+            cameraV = v,
+            cameraW = w
+          }
 
 render :: Camera -> AnyHittable -> IO ()
 render cam@(Camera {cameraImageWidth, cameraImageheight}) world = do

@@ -43,6 +43,9 @@ unitVec3 v = v `divVec3` lengthVec3 v
 applyToVec3 :: Vec3 -> (Double -> Double) -> Vec3
 applyToVec3 (Vec3 x y z) f = Vec3 (f x) (f y) (f z)
 
+crossVec3 :: Vec3 -> Vec3 -> Vec3
+crossVec3 a b = Vec3 (y a * z b - z a * y b) (z a * x b - x a * z b) (x a * y b - y a * x b)
+
 randomVec3 :: Double -> Double -> IO Vec3
 randomVec3 hi lo = Vec3 <$> randomDouble hi lo <*> randomDouble hi lo <*> randomDouble hi lo
 
