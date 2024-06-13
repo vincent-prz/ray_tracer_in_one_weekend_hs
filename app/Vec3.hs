@@ -66,6 +66,13 @@ getRandomOnHemisphere n = do
     then return v
     else return (-v)
 
+getRandomInUnitDisk :: IO Vec3
+getRandomInUnitDisk = do
+  p <- (\x y -> Vec3 x y 0) <$> randomDouble (-1) 1 <*> randomDouble (-1) 1
+  if lengthSquared p < 1
+    then return p
+    else getRandomInUnitDisk
+
 isVec3NearZero :: Vec3 -> Bool
 isVec3NearZero (Vec3 x y z) = (abs x < threshold) && (abs y < threshold) && (abs z < threshold)
   where

@@ -9,7 +9,7 @@ import Material (Material (scatter))
 import Ray
 import System.IO (hPutStrLn, stderr)
 import Utils (degreesToRadian, posInfinity, randomDoubleUnit)
-import Vec3 (Point, Vec3 (..), crossVec3, divVec3, lengthVec3, mulVec3, unitVec3)
+import Vec3 (Point, Vec3 (..), crossVec3, divVec3, getRandomInUnitDisk, lengthVec3, mulVec3, unitVec3)
 
 -- TODO: add default args
 data CameraArgs = CameraArgs
@@ -20,7 +20,9 @@ data CameraArgs = CameraArgs
     cameraArgsVerticalAngle :: Double,
     cameraArgsLookFrom :: Point,
     cameraArgsLookAt :: Point,
-    cameraArgsVup :: Vec3
+    cameraArgsVup :: Vec3,
+    cameraArgsDefocusAngle :: Double,
+    cameraArgsFocusDist :: Double
   }
 
 data Camera = Camera
@@ -36,7 +38,9 @@ data Camera = Camera
     cameraMaxDepth :: Int,
     cameraU :: Vec3,
     cameraV :: Vec3,
-    cameraW :: Vec3
+    cameraW :: Vec3,
+    cameraDefocusAngle :: Double,
+    cameraFocusDist :: Double
   }
 
 mkCamera :: CameraArgs -> Camera
@@ -49,12 +53,14 @@ mkCamera
         cameraArgsVerticalAngle,
         cameraArgsLookFrom,
         cameraArgsLookAt,
-        cameraArgsVup
+        cameraArgsVup,
+        cameraArgsDefocusAngle,
+        cameraArgsFocusDist
       }
     ) =
     let imageHeight = let val = round (fromIntegral cameraArgsImageWidth / cameraArgsAspectRatio) in max val 1
         focalLength :: Double
-        focalLength = lengthVec3 (cameraArgsLookFrom - cameraArgsLookAt)
+        focalLength = cameraArgsFocusDist
 
         theta :: Double
         theta = degreesToRadian cameraArgsVerticalAngle
@@ -107,7 +113,8 @@ mkCamera
             cameraMaxDepth = cameraArgsMaxDepth,
             cameraU = u,
             cameraV = v,
-            cameraW = w
+            cameraW = w,
+            cameraDefocusAngle = cameraArgsDefocusAngle
           }
 
 render :: Camera -> AnyHittable -> IO ()
@@ -134,15 +141,31 @@ getRandomColor cam world i j =
     rayColor randomRay (cameraMaxDepth cam) world
 
 getRandomRay :: Camera -> Int -> Int -> IO Ray
-getRandomRay (Camera {cameraCenter, cameraPixel00Loc, cameraPixelDeltaU, cameraPixelDeltaV}) i j = do
-  offset <- sampleSquare
-  let pixelCenterU = (fromIntegral i + x offset) `mulVec3` cameraPixelDeltaU
-  let pixelCenterV = (fromIntegral j + y offset) `mulVec3` cameraPixelDeltaV
-  let pixelCenter = cameraPixel00Loc + pixelCenterU + pixelCenterV
-  let rayDirection = pixelCenter - cameraCenter
-  return (Ray {origin = cameraCenter, direction = rayDirection})
-  where
-    sampleSquare = (\x y -> Vec3 (x - 0.5) (y - 0.5) 0) <$> randomDoubleUnit <*> randomDoubleUnit
+getRandomRay
+  ( Camera
+      { cameraCenter,
+        cameraPixel00Loc,
+        cameraPixelDeltaU,
+        cameraPixelDeltaV,
+        cameraDefocusAngle,
+        cameraFocusDist
+      }
+    )
+  i
+  j = do
+    offset <- sampleSquare
+    let pixelCenterU = (fromIntegral i + x offset) `mulVec3` cameraPixelDeltaU
+    let pixelCenterV = (fromIntegral j + y offset) `mulVec3` cameraPixelDeltaV
+    let pixelCenter = cameraPixel00Loc + pixelCenterU + pixelCenterV
+    let rayDirection = pixelCenter - cameraCenter
+
+    let defocusAngle = degreesToRadian cameraDefocusAngle
+    let defocusRadius = cameraFocusDist * tan (defocusAngle / 2)
+    defocusDeviation <- mulVec3 defocusRadius <$> getRandomInUnitDisk
+
+    return (Ray {origin = cameraCenter + defocusDeviation, direction = rayDirection})
+    where
+      sampleSquare = (\x y -> Vec3 (x - 0.5) (y - 0.5) 0) <$> randomDoubleUnit <*> randomDoubleUnit
 
 rayColor :: Ray -> Int -> AnyHittable -> IO Color
 rayColor _ 0 _ = return 0
