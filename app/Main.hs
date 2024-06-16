@@ -52,7 +52,9 @@ camera =
         cameraArgsVerticalAngle = 20,
         cameraArgsLookFrom = Vec3 (-2) 2 1,
         cameraArgsLookAt = Vec3 0 0 (-1),
-        cameraArgsVup = Vec3 0 1 0
+        cameraArgsVup = Vec3 0 1 0,
+        cameraArgsDefocusAngle = 10,
+        cameraArgsFocusDist = 3.4
       }
 
 main :: IO ()

@@ -9,7 +9,7 @@ import Material (Material (scatter))
 import Ray
 import System.IO (hPutStrLn, stderr)
 import Utils (degreesToRadian, posInfinity, randomDoubleUnit)
-import Vec3 (Point, Vec3 (..), crossVec3, divVec3, getRandomInUnitDisk, lengthVec3, mulVec3, unitVec3)
+import Vec3 (Point, Vec3 (..), crossVec3, divVec3, getRandomInUnitDisk, mulVec3, unitVec3)
 
 -- TODO: add default args
 data CameraArgs = CameraArgs
@@ -40,7 +40,8 @@ data Camera = Camera
     cameraV :: Vec3,
     cameraW :: Vec3,
     cameraDefocusAngle :: Double,
-    cameraFocusDist :: Double
+    cameraDefocusU :: Vec3,
+    cameraDefocusV :: Vec3
   }
 
 mkCamera :: CameraArgs -> Camera
@@ -59,14 +60,11 @@ mkCamera
       }
     ) =
     let imageHeight = let val = round (fromIntegral cameraArgsImageWidth / cameraArgsAspectRatio) in max val 1
-        focalLength :: Double
-        focalLength = cameraArgsFocusDist
-
         theta :: Double
         theta = degreesToRadian cameraArgsVerticalAngle
 
         viewPortHeight :: Double
-        viewPortHeight = 2.0 * tan (theta / 2) * focalLength
+        viewPortHeight = 2.0 * tan (theta / 2) * cameraArgsFocusDist
 
         viewPortWidth :: Double
         viewPortWidth = viewPortHeight * (fromIntegral cameraArgsImageWidth / fromIntegral imageHeight)
@@ -96,10 +94,16 @@ mkCamera
         pixelDeltaV = viewPortV `divVec3` fromIntegral imageHeight
 
         viewPortUpperLeft :: Vec3
-        viewPortUpperLeft = center - mulVec3 focalLength w - viewPortU `divVec3` 2 - viewPortV `divVec3` 2
+        viewPortUpperLeft = center - mulVec3 cameraArgsFocusDist w - viewPortU `divVec3` 2 - viewPortV `divVec3` 2
 
         pixel00Loc :: Vec3
         pixel00Loc = viewPortUpperLeft + 0.5 `mulVec3` (pixelDeltaU + pixelDeltaV)
+
+        defocusAngle :: Double
+        defocusAngle = degreesToRadian cameraArgsDefocusAngle
+
+        defocusRadius :: Double
+        defocusRadius = cameraArgsFocusDist * tan (defocusAngle / 2)
      in Camera
           { cameraAspectRatio = cameraArgsAspectRatio,
             cameraImageWidth = cameraArgsImageWidth,
@@ -114,7 +118,9 @@ mkCamera
             cameraU = u,
             cameraV = v,
             cameraW = w,
-            cameraDefocusAngle = cameraArgsDefocusAngle
+            cameraDefocusAngle = cameraArgsDefocusAngle,
+            cameraDefocusU = mulVec3 defocusRadius u,
+            cameraDefocusV = mulVec3 defocusRadius v
           }
 
 render :: Camera -> AnyHittable -> IO ()
@@ -148,7 +154,8 @@ getRandomRay
         cameraPixelDeltaU,
         cameraPixelDeltaV,
         cameraDefocusAngle,
-        cameraFocusDist
+        cameraDefocusU,
+        cameraDefocusV
       }
     )
   i
@@ -157,15 +164,20 @@ getRandomRay
     let pixelCenterU = (fromIntegral i + x offset) `mulVec3` cameraPixelDeltaU
     let pixelCenterV = (fromIntegral j + y offset) `mulVec3` cameraPixelDeltaV
     let pixelCenter = cameraPixel00Loc + pixelCenterU + pixelCenterV
-    let rayDirection = pixelCenter - cameraCenter
+    rayOrigin <-
+      if cameraDefocusAngle <= 0
+        then return cameraCenter
+        else defocusDiskSample
+    let rayDirection = pixelCenter - rayOrigin
 
-    let defocusAngle = degreesToRadian cameraDefocusAngle
-    let defocusRadius = cameraFocusDist * tan (defocusAngle / 2)
-    defocusDeviation <- mulVec3 defocusRadius <$> getRandomInUnitDisk
-
-    return (Ray {origin = cameraCenter + defocusDeviation, direction = rayDirection})
+    return (Ray {origin = rayOrigin, direction = rayDirection})
     where
       sampleSquare = (\x y -> Vec3 (x - 0.5) (y - 0.5) 0) <$> randomDoubleUnit <*> randomDoubleUnit
+      defocusDiskSample =
+        ( \(Vec3 x y _) ->
+            cameraCenter + mulVec3 x cameraDefocusU + mulVec3 y cameraDefocusV
+        )
+          <$> getRandomInUnitDisk
 
 rayColor :: Ray -> Int -> AnyHittable -> IO Color
 rayColor _ 0 _ = return 0
