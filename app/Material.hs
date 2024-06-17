@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
@@ -12,6 +13,9 @@ import Vec3 (Vec3 (Vec3), dotProduct, getRandomVec3InUnitSphere, isVec3NearZero,
 
 class Material a where
   scatter :: a -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
+
+-- Define an existential wrapper type to allow heterogeneous lists of Materials.
+data AnyMaterial = forall a. (Material a) => AnyMaterial a
 
 newtype Lambertian = Lambertian Color
 
