@@ -34,7 +34,7 @@ instance Material Metal where
   scatter :: Metal -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
   scatter (Metal albedo fuzz) rayIn (HitRecord {hitRecordP, hitRecordNormal}) =
     do
-      let normalizedFuzz = max fuzz 1
+      let normalizedFuzz = min fuzz 1
       let reflected = reflect (direction rayIn) hitRecordNormal
       randomVec <- getRandomVec3InUnitSphere
       let reflectedWithFuzz = unitVec3 reflected + mulVec3 normalizedFuzz randomVec
