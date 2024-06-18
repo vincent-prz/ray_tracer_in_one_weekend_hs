@@ -1,7 +1,6 @@
 module Main where
 
 import Camera (Camera, CameraArgs (..), mkCamera, render)
-import Control.Monad (zipWithM)
 import Data.Maybe (catMaybes)
 import Hittable (AnyHittable (AnyHittable))
 import Material (AnyMaterial (AnyMaterial), Dielectric (Dielectric), Lambertian (Lambertian), Metal (Metal))
