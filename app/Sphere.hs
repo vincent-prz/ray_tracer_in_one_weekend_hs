@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -14,7 +15,7 @@ data Sphere = forall mat. (Material mat) => Sphere {center :: Point, radius :: D
 
 instance Hittable Sphere where
   hit :: Sphere -> Ray -> Interval -> Maybe HitRecord
-  hit (Sphere {radius, center, sphereMat}) ray interval =
+  hit (Sphere {radius, center, sphereMat}) !ray !interval =
     let d = direction ray
         qc = center - origin ray
         a = dotProduct d d
