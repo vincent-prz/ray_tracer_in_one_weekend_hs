@@ -2,9 +2,9 @@
 
 module Vec3 where
 
-import Utils (randomDouble, randomDoubleUnit)
+import Utils (randomDouble)
 
-data Vec3 = Vec3 {x :: Double, y :: Double, z :: Double} deriving (Show)
+data Vec3 = Vec3 {x :: !Double, y :: !Double, z :: !Double} deriving (Show)
 
 type Point = Vec3
 
@@ -22,6 +22,7 @@ instance Num Vec3 where
   fromInteger :: Integer -> Vec3
   fromInteger i = Vec3 (fromInteger i) (fromInteger i) (fromInteger i)
 
+{-# INLINE dotProduct #-}
 dotProduct :: Vec3 -> Vec3 -> Double
 dotProduct (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = x1 * x2 + y1 * y2 + z1 * z2
 

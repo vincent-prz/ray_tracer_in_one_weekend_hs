@@ -5,6 +5,7 @@
 module Hittable where
 
 import Control.Applicative (Alternative ((<|>)))
+import Data.List (foldl')
 import Interval (Interval (Interval))
 -- the SOURCE pragma is in order to avoid circular dependency
 import {-# SOURCE #-} Material (Material)
@@ -39,7 +40,7 @@ mkHitRecord p outwardNormal t ray mat =
 
 instance Hittable [AnyHittable] where
   hit :: [AnyHittable] -> Ray -> Interval -> Maybe HitRecord
-  hit objects ray (Interval tmin tmax) = foldl f Nothing objects
+  hit objects ray (Interval tmin tmax) = foldl' f Nothing objects
     where
       f :: Maybe HitRecord -> AnyHittable -> Maybe HitRecord
       f closestRecord (AnyHittable object) =
