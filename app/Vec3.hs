@@ -2,7 +2,7 @@
 
 module Vec3 where
 
-import Utils (randomDouble)
+import Utils (RandomState, randomDouble)
 
 data Vec3 = Vec3 {x :: !Double, y :: !Double, z :: !Double} deriving (Show)
 
@@ -47,27 +47,27 @@ applyToVec3 (Vec3 x y z) f = Vec3 (f x) (f y) (f z)
 crossVec3 :: Vec3 -> Vec3 -> Vec3
 crossVec3 a b = Vec3 (y a * z b - z a * y b) (z a * x b - x a * z b) (x a * y b - y a * x b)
 
-randomVec3 :: Double -> Double -> IO Vec3
+randomVec3 :: Double -> Double -> RandomState Vec3
 randomVec3 hi lo = Vec3 <$> randomDouble hi lo <*> randomDouble hi lo <*> randomDouble hi lo
 
-getRandomVec3InUnitSphere :: IO Vec3
+getRandomVec3InUnitSphere :: RandomState Vec3
 getRandomVec3InUnitSphere = do
   v <- randomVec3 (-1) 1
   if lengthSquared v < 1
     then return v
     else getRandomVec3InUnitSphere
 
-getRandomUnitVector :: IO Vec3
+getRandomUnitVector :: RandomState Vec3
 getRandomUnitVector = unitVec3 <$> getRandomVec3InUnitSphere
 
-getRandomOnHemisphere :: Vec3 -> IO Vec3
+getRandomOnHemisphere :: Vec3 -> RandomState Vec3
 getRandomOnHemisphere n = do
   v <- getRandomUnitVector
   if dotProduct n v > 0
     then return v
     else return (-v)
 
-getRandomInUnitDisk :: IO Vec3
+getRandomInUnitDisk :: RandomState Vec3
 getRandomInUnitDisk = do
   p <- (\x y -> Vec3 x y 0) <$> randomDouble (-1) 1 <*> randomDouble (-1) 1
   if lengthSquared p < 1

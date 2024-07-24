@@ -8,11 +8,11 @@ import Color (Color)
 import GHC.Float (powerDouble)
 import Hittable (HitRecord (..), hitRecordNormal, hitRecordP)
 import Ray (Ray (Ray, direction, origin))
-import Utils (randomDoubleUnit)
+import Utils (RandomState, randomDoubleUnit)
 import Vec3 (Vec3 (Vec3), dotProduct, getRandomVec3InUnitSphere, isVec3NearZero, mulVec3, reflect, refract, unitVec3)
 
 class Material a where
-  scatter :: a -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
+  scatter :: a -> Ray -> HitRecord -> RandomState (Maybe (Color, Ray))
 
 -- Define an existential wrapper type to allow heterogeneous lists of Materials.
 data AnyMaterial = forall a. (Material a) => AnyMaterial a
@@ -20,7 +20,7 @@ data AnyMaterial = forall a. (Material a) => AnyMaterial a
 newtype Lambertian = Lambertian Color
 
 instance Material Lambertian where
-  scatter :: Lambertian -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
+  scatter :: Lambertian -> Ray -> HitRecord -> RandomState (Maybe (Color, Ray))
   scatter (Lambertian albedo) _ (HitRecord {hitRecordP, hitRecordNormal}) =
     do
       direction <- (+ hitRecordNormal) <$> getRandomVec3InUnitSphere
@@ -31,7 +31,7 @@ instance Material Lambertian where
 data Metal = Metal Color Double
 
 instance Material Metal where
-  scatter :: Metal -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
+  scatter :: Metal -> Ray -> HitRecord -> RandomState (Maybe (Color, Ray))
   scatter (Metal albedo fuzz) rayIn (HitRecord {hitRecordP, hitRecordNormal}) =
     do
       let normalizedFuzz = min fuzz 1
@@ -46,7 +46,7 @@ instance Material Metal where
 newtype Dielectric = Dielectric Double
 
 instance Material Dielectric where
-  scatter :: Dielectric -> Ray -> HitRecord -> IO (Maybe (Color, Ray))
+  scatter :: Dielectric -> Ray -> HitRecord -> RandomState (Maybe (Color, Ray))
   scatter (Dielectric refractionIndex) rayIn (HitRecord {hitRecordNormal, hitRecordfrontFace, hitRecordP}) =
     let actualRefractionIndex = if hitRecordfrontFace then 1 / refractionIndex else refractionIndex
         unitDirection = unitVec3 (direction rayIn)
