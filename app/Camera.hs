@@ -4,11 +4,12 @@ module Camera where
 
 import Color
 import Control.Monad.State (evalState, replicateM)
+import Control.Parallel.Strategies (parMap, rdeepseq)
 import Hittable (AnyHittable (AnyHittable), HitRecord (HitRecord, hitRecordMat), Hittable (hit))
 import Interval
 import Material (Material (scatter))
 import Ray
-import System.Random (StdGen)
+import System.Random (newStdGen)
 import Utils (RandomState, degreesToRadian, posInfinity, randomDoubleUnit)
 import Vec3 (Point, Vec3 (..), crossVec3, divVec3, getRandomInUnitDisk, mulVec3, unitVec3)
 
@@ -124,21 +125,23 @@ mkCamera
             cameraDefocusV = mulVec3 defocusRadius v
           }
 
-render :: Camera -> AnyHittable -> StdGen -> IO ()
-render cam@(Camera {cameraImageWidth, cameraImageheight}) world gen = do
+render :: Camera -> AnyHittable -> IO ()
+render cam@(Camera {cameraImageWidth, cameraImageheight, cameraSamplesPerPixel}) world = do
+  gens <- replicateM cameraSamplesPerPixel newStdGen
   putStr ("P3\n" ++ show cameraImageWidth ++ " " ++ show cameraImageheight ++ "\n255\n")
-  let colors = evalState (getPixelColors cam world) gen
-  mapM_ writeColor colors
+  let colors = parMap rdeepseq (evalState (getPixelColors cam world)) gens
+  mapM_ writeColor (averageColors colors)
+  where
+    averageColors :: [[Color]] -> [Color]
+    averageColors matrix =
+      let mSum = sumColors matrix
+       in map (`divVec3` fromIntegral (length matrix)) mSum
+    sumColors :: [[Color]] -> [Color]
+    sumColors = foldl1 (zipWith (+))
 
 getPixelColors :: Camera -> AnyHittable -> RandomState [Color]
 getPixelColors cam@(Camera {cameraImageWidth, cameraImageheight}) world = do
-  sequence [getColor cam world i j | j <- [0 .. cameraImageheight - 1], i <- [0 .. cameraImageWidth - 1]]
-
-getColor :: Camera -> AnyHittable -> Int -> Int -> RandomState Color
-getColor cam@(Camera {cameraSamplesPerPixel, cameraPixelSamplesScale}) world i j =
-  do
-    randomColors <- replicateM cameraSamplesPerPixel (getRandomColor cam world i j)
-    return (cameraPixelSamplesScale `mulVec3` sum randomColors)
+  sequence [getRandomColor cam world i j | j <- [0 .. cameraImageheight - 1], i <- [0 .. cameraImageWidth - 1]]
 
 getRandomColor :: Camera -> AnyHittable -> Int -> Int -> RandomState Color
 getRandomColor cam world i j =

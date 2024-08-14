@@ -2,6 +2,7 @@
 
 module Vec3 where
 
+import Control.DeepSeq (NFData, rnf)
 import Utils (RandomState, randomDouble)
 
 data Vec3 = Vec3 {x :: !Double, y :: !Double, z :: !Double} deriving (Show)
@@ -21,6 +22,10 @@ instance Num Vec3 where
   signum (Vec3 x y z) = Vec3 (signum x) (signum y) (signum z)
   fromInteger :: Integer -> Vec3
   fromInteger i = Vec3 (fromInteger i) (fromInteger i) (fromInteger i)
+
+instance NFData Vec3 where
+  rnf :: Vec3 -> ()
+  rnf (Vec3 x y z) = rnf x `seq` rnf y `seq` rnf z
 
 {-# INLINE dotProduct #-}
 dotProduct :: Vec3 -> Vec3 -> Double

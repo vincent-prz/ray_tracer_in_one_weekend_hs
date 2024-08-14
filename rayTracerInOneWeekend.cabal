@@ -79,7 +79,9 @@ executable rayTracerInOneWeekend
     -- Other library packages from which modules are imported.
     build-depends:
         base ^>=4.17.2.1,
+        deepseq ^>=1.4.8.0,
         mtl ^>=2.2.2,
+        parallel ^>=3.2.2.0,
         random ^>=1.2.1.1
 
     -- Directories containing source files.

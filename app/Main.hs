@@ -60,7 +60,7 @@ camera =
     CameraArgs
       { cameraArgsAspectRatio = 16 / 9,
         cameraArgsImageWidth = 400,
-        cameraArgsSamplesPerPixel = 1,
+        cameraArgsSamplesPerPixel = 50,
         cameraArgsMaxDepth = 50,
         cameraArgsVerticalAngle = 20,
         cameraArgsLookFrom = Vec3 13 2 3,
@@ -82,4 +82,4 @@ main = do
             AnyHittable Sphere {center = Vec3 4 1 0, radius = 1.0, sphereMat = material3},
             spheres
           ]
-  render camera world gen
+  render camera world
