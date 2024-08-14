@@ -3,12 +3,11 @@
 module Camera where
 
 import Color
-import Control.Monad.State (evalState)
+import Control.Monad.State (evalState, replicateM)
 import Hittable (AnyHittable (AnyHittable), HitRecord (HitRecord, hitRecordMat), Hittable (hit))
 import Interval
 import Material (Material (scatter))
 import Ray
-import System.IO (hPutStrLn, stderr)
 import System.Random (StdGen)
 import Utils (RandomState, degreesToRadian, posInfinity, randomDoubleUnit)
 import Vec3 (Point, Vec3 (..), crossVec3, divVec3, getRandomInUnitDisk, mulVec3, unitVec3)
@@ -129,23 +128,16 @@ render :: Camera -> AnyHittable -> StdGen -> IO ()
 render cam@(Camera {cameraImageWidth, cameraImageheight}) world gen = do
   putStr ("P3\n" ++ show cameraImageWidth ++ " " ++ show cameraImageheight ++ "\n255\n")
   let colors = evalState (getPixelColors cam world) gen
-  mapM_ (mapM_ writeColor) colors
+  mapM_ writeColor colors
 
--- mapM_ (displayLine cam world) [0 .. cameraImageheight - 1]
-
--- displayLine :: Camera -> AnyHittable -> Int -> RandomState ()
--- displayLine cam@(Camera {cameraImageWidth, cameraImageheight}) world j = do
---   -- hPutStrLn stderr ("Scanlines remaining: " ++ show (cameraImageheight - j))
---   colors <- sequence [getColor cam world i j | i <- [0 .. cameraImageWidth - 1]]
---   mapM_ writeColor colors
-getPixelColors :: Camera -> AnyHittable -> RandomState [[Color]]
+getPixelColors :: Camera -> AnyHittable -> RandomState [Color]
 getPixelColors cam@(Camera {cameraImageWidth, cameraImageheight}) world = do
-  sequence [sequence [getColor cam world i j | i <- [0 .. cameraImageWidth - 1]] | j <- [0 .. cameraImageheight - 1]]
+  sequence [getColor cam world i j | j <- [0 .. cameraImageheight - 1], i <- [0 .. cameraImageWidth - 1]]
 
 getColor :: Camera -> AnyHittable -> Int -> Int -> RandomState Color
 getColor cam@(Camera {cameraSamplesPerPixel, cameraPixelSamplesScale}) world i j =
   do
-    randomColors <- sequence [getRandomColor cam world i j | _ <- [0 .. cameraSamplesPerPixel - 1]]
+    randomColors <- replicateM cameraSamplesPerPixel (getRandomColor cam world i j)
     return (cameraPixelSamplesScale `mulVec3` sum randomColors)
 
 getRandomColor :: Camera -> AnyHittable -> Int -> Int -> RandomState Color
