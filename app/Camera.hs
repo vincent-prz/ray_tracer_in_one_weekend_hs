@@ -4,10 +4,10 @@ module Camera where
 
 import Color
 import Control.Monad.State (evalState, replicateM)
-import Control.Parallel.Strategies (parMap, rdeepseq)
 import Hittable (AnyHittable (AnyHittable), HitRecord (HitRecord, hitRecordMat), Hittable (hit))
 import Interval
 import Material (Material (scatter))
+import Parallel (parMapReduceDicho)
 import Ray
 import System.Random (newStdGen)
 import Utils (RandomState, degreesToRadian, posInfinity, randomDoubleUnit)
@@ -17,7 +17,7 @@ import Vec3 (Point, Vec3 (..), crossVec3, divVec3, getRandomInUnitDisk, mulVec3,
 data CameraArgs = CameraArgs
   { cameraArgsAspectRatio :: Double,
     cameraArgsImageWidth :: Int,
-    cameraArgsSamplesPerPixel :: Int,
+    cameraArgsSamplesPerPixel :: Int, -- use a power of two if possible. See parMapReduceDicho
     cameraArgsMaxDepth :: Int,
     cameraArgsVerticalAngle :: Double,
     cameraArgsLookFrom :: Point,
@@ -129,15 +129,13 @@ render :: Camera -> AnyHittable -> IO ()
 render cam@(Camera {cameraImageWidth, cameraImageheight, cameraSamplesPerPixel}) world = do
   gens <- replicateM cameraSamplesPerPixel newStdGen
   putStr ("P3\n" ++ show cameraImageWidth ++ " " ++ show cameraImageheight ++ "\n255\n")
-  let colors = parMap rdeepseq (evalState (getPixelColors cam world)) gens
-  mapM_ writeColor (averageColors colors)
+  let colors = parMapReduceDicho (evalState (getPixelColors cam world)) average2Images gens
+  mapM_ writeColor colors
   where
-    averageColors :: [[Color]] -> [Color]
-    averageColors matrix =
-      let mSum = sumColors matrix
-       in map (`divVec3` fromIntegral (length matrix)) mSum
-    sumColors :: [[Color]] -> [Color]
-    sumColors = foldl1 (zipWith (+))
+    average2Images :: [Color] -> [Color] -> [Color]
+    average2Images a b =
+      let imageSum = zipWith (+) a b
+       in map (`divVec3` 2) imageSum
 
 getPixelColors :: Camera -> AnyHittable -> RandomState [Color]
 getPixelColors cam@(Camera {cameraImageWidth, cameraImageheight}) world = do

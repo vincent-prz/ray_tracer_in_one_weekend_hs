@@ -68,6 +68,7 @@ executable rayTracerInOneWeekend
         Hittable
         Interval
         Material
+        Parallel
         Ray
         Sphere
         Utils
