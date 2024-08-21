@@ -3,12 +3,14 @@
 module Camera where
 
 import Color
+import Control.Monad.State (evalState, replicateM)
+import Control.Parallel.Strategies (parMap, rdeepseq)
 import Hittable (AnyHittable (AnyHittable), HitRecord (HitRecord, hitRecordMat), Hittable (hit))
 import Interval
 import Material (Material (scatter))
 import Ray
-import System.IO (hPutStrLn, stderr)
-import Utils (degreesToRadian, posInfinity, randomDoubleUnit)
+import System.Random (newStdGen)
+import Utils (RandomState, degreesToRadian, posInfinity, randomDoubleUnit)
 import Vec3 (Point, Vec3 (..), crossVec3, divVec3, getRandomInUnitDisk, mulVec3, unitVec3)
 
 -- TODO: add default args
@@ -124,29 +126,30 @@ mkCamera
           }
 
 render :: Camera -> AnyHittable -> IO ()
-render cam@(Camera {cameraImageWidth, cameraImageheight}) world = do
+render cam@(Camera {cameraImageWidth, cameraImageheight, cameraSamplesPerPixel}) world = do
+  gens <- replicateM cameraSamplesPerPixel newStdGen
   putStr ("P3\n" ++ show cameraImageWidth ++ " " ++ show cameraImageheight ++ "\n255\n")
-  mapM_ (displayLine cam world) [0 .. cameraImageheight - 1]
+  let colors = parMap rdeepseq (evalState (getPixelColors cam world)) gens
+  mapM_ writeColor (averageColors colors)
+  where
+    averageColors :: [[Color]] -> [Color]
+    averageColors matrix =
+      let mSum = sumColors matrix
+       in map (`divVec3` fromIntegral (length matrix)) mSum
+    sumColors :: [[Color]] -> [Color]
+    sumColors = foldl1 (zipWith (+))
 
-displayLine :: Camera -> AnyHittable -> Int -> IO ()
-displayLine cam@(Camera {cameraImageWidth, cameraImageheight}) world j = do
-  hPutStrLn stderr ("Scanlines remaining: " ++ show (cameraImageheight - j))
-  colors <- sequence [getColor cam world i j | i <- [0 .. cameraImageWidth - 1]]
-  mapM_ writeColor colors
+getPixelColors :: Camera -> AnyHittable -> RandomState [Color]
+getPixelColors cam@(Camera {cameraImageWidth, cameraImageheight}) world = do
+  sequence [getRandomColor cam world i j | j <- [0 .. cameraImageheight - 1], i <- [0 .. cameraImageWidth - 1]]
 
-getColor :: Camera -> AnyHittable -> Int -> Int -> IO Color
-getColor cam@(Camera {cameraSamplesPerPixel, cameraPixelSamplesScale}) world i j =
-  do
-    randomColors <- sequence [getRandomColor cam world i j | _ <- [0 .. cameraSamplesPerPixel - 1]]
-    return (cameraPixelSamplesScale `mulVec3` sum randomColors)
-
-getRandomColor :: Camera -> AnyHittable -> Int -> Int -> IO Color
+getRandomColor :: Camera -> AnyHittable -> Int -> Int -> RandomState Color
 getRandomColor cam world i j =
   do
     randomRay <- getRandomRay cam i j
     rayColor randomRay (cameraMaxDepth cam) world
 
-getRandomRay :: Camera -> Int -> Int -> IO Ray
+getRandomRay :: Camera -> Int -> Int -> RandomState Ray
 getRandomRay
   ( Camera
       { cameraCenter,
@@ -179,7 +182,7 @@ getRandomRay
         )
           <$> getRandomInUnitDisk
 
-rayColor :: Ray -> Int -> AnyHittable -> IO Color
+rayColor :: Ray -> Int -> AnyHittable -> RandomState Color
 rayColor _ 0 _ = return 0
 rayColor ray depth (AnyHittable world) =
   case hit world ray (Interval 0.001 posInfinity) of

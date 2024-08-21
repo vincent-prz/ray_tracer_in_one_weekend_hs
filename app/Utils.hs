@@ -1,5 +1,6 @@
 module Utils where
 
+import Control.Monad.State
 import System.Random
 
 posInfinity :: Double
@@ -8,11 +9,16 @@ posInfinity = 1 / 0
 negInfinity :: Double
 negInfinity = -posInfinity
 
-randomDouble :: Double -> Double -> IO Double
-randomDouble hi lo = do
-  fst . randomR (hi, lo) <$> newStdGen
+type RandomState a = State StdGen a
 
-randomDoubleUnit :: IO Double
+randomDouble :: Double -> Double -> RandomState Double
+randomDouble hi lo = do
+  gen <- get
+  let (result, gen') = randomR (hi, lo) gen
+  put gen'
+  return result
+
+randomDoubleUnit :: RandomState Double
 randomDoubleUnit = randomDouble 0 1
 
 degreesToRadian :: Double -> Double

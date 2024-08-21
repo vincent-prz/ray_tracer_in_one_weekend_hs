@@ -1,11 +1,13 @@
 module Main where
 
 import Camera (Camera, CameraArgs (..), mkCamera, render)
+import Control.Monad.State (evalState)
 import Data.Maybe (catMaybes)
 import Hittable (AnyHittable (AnyHittable))
 import Material (AnyMaterial (AnyMaterial), Dielectric (Dielectric), Lambertian (Lambertian), Metal (Metal))
 import Sphere (Sphere (..))
-import Utils (randomDouble, randomDoubleUnit)
+import System.Random
+import Utils (RandomState, randomDouble, randomDoubleUnit)
 import Vec3
 
 -- Image
@@ -27,10 +29,10 @@ material2 = Lambertian (Vec3 0.4 0.2 0.1)
 material3 :: Metal
 material3 = Metal (Vec3 0.7 0.6 0.5) 0
 
-genSpheres :: IO AnyHittable
+genSpheres :: RandomState AnyHittable
 genSpheres = AnyHittable . catMaybes <$> mapM (uncurry genSphere) [(i, j) | i <- [-11 .. 10], j <- [-11 .. 10]]
 
-genSphere :: Int -> Int -> IO (Maybe AnyHittable)
+genSphere :: Int -> Int -> RandomState (Maybe AnyHittable)
 genSphere a b = do
   let aFloat = fromIntegral a
   let bFloat = fromIntegral b
@@ -46,7 +48,7 @@ genSphere a b = do
         (Just (AnyHittable Sphere {center = sphereCenter, radius = 0.2, sphereMat = material}))
     else return Nothing
   where
-    selectMaterial :: Double -> IO AnyMaterial
+    selectMaterial :: Double -> RandomState AnyMaterial
     selectMaterial mVal
       | mVal < 0.8 = AnyMaterial . Lambertian <$> ((*) <$> randomVec3 0 1 <*> randomVec3 0 1)
       | mVal < 0.95 = AnyMaterial <$> (Metal <$> randomVec3 0.5 1 <*> randomDouble 0 0.5)
@@ -57,8 +59,8 @@ camera =
   mkCamera
     CameraArgs
       { cameraArgsAspectRatio = 16 / 9,
-        cameraArgsImageWidth = 1200,
-        cameraArgsSamplesPerPixel = 500,
+        cameraArgsImageWidth = 400,
+        cameraArgsSamplesPerPixel = 50,
         cameraArgsMaxDepth = 50,
         cameraArgsVerticalAngle = 20,
         cameraArgsLookFrom = Vec3 13 2 3,
@@ -70,7 +72,8 @@ camera =
 
 main :: IO ()
 main = do
-  spheres <- genSpheres
+  gen <- newStdGen
+  let spheres = evalState genSpheres gen
   let world =
         AnyHittable
           [ AnyHittable Sphere {center = Vec3 0 (-1000) 0, radius = 1000, sphereMat = groundMaterial},
