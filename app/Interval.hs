@@ -1,4 +1,14 @@
-module Interval where
+module Interval
+  ( Interval (..),
+    intervalSize,
+    intervalContains,
+    intervalSurrounds,
+    intervalClamps,
+    universe,
+    empty,
+    findFirstInInterval,
+  )
+where
 
 import Utils (negInfinity, posInfinity)
 

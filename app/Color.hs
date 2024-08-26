@@ -1,4 +1,8 @@
-module Color where
+module Color
+  ( Color,
+    writeColor,
+  )
+where
 
 import Interval (Interval (Interval), intervalClamps)
 import Vec3
@@ -7,9 +11,6 @@ type Color = Vec3
 
 colorRatio :: Double
 colorRatio = 255.999
-
-getColorString :: Color -> String
-getColorString c = show (x c) ++ " " ++ show (y c) ++ " " ++ show (z c)
 
 linearToGamma :: Double -> Double
 linearToGamma linearComponent

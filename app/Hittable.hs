@@ -2,7 +2,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 
-module Hittable where
+module Hittable
+  ( AnyHittable (..),
+    Hittable (hit),
+    HitRecord (..),
+    mkHitRecord,
+  )
+where
 
 import Control.Applicative (Alternative ((<|>)))
 import Data.List (foldl')

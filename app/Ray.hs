@@ -1,4 +1,8 @@
-module Ray where
+module Ray
+  ( Ray (..),
+    rayAt,
+  )
+where
 
 import Vec3 (Point, Vec3, mulVec3)
 

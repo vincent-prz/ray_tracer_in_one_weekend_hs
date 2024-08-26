@@ -1,4 +1,12 @@
-module Utils where
+module Utils
+  ( randomDouble,
+    randomDoubleUnit,
+    RandomState,
+    posInfinity,
+    negInfinity,
+    degreesToRadian,
+  )
+where
 
 import Control.Monad.State
 import System.Random
