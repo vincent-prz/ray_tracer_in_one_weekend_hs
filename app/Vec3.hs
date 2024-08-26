@@ -1,6 +1,25 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module Vec3 where
+module Vec3
+  ( Vec3 (..),
+    Point,
+    dotProduct,
+    mulVec3,
+    divVec3,
+    lengthVec3,
+    lengthSquared,
+    unitVec3,
+    applyToVec3,
+    crossVec3,
+    randomVec3,
+    getRandomInUnitDisk,
+    getRandomOnHemisphere,
+    getRandomVec3InUnitSphere,
+    isVec3NearZero,
+    refract,
+    reflect,
+  )
+where
 
 import Control.DeepSeq (NFData, rnf)
 import Utils (RandomState, randomDouble)

@@ -2,7 +2,14 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Material where
+module Material
+  ( Material (..),
+    AnyMaterial (..),
+    Lambertian (..),
+    Metal (..),
+    Dielectric (..),
+  )
+where
 
 import Color (Color)
 import GHC.Float (powerDouble)

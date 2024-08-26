@@ -3,7 +3,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Sphere where
+module Sphere (Sphere (..)) where
 
 import Hittable (HitRecord (..), Hittable (hit), mkHitRecord)
 import Interval (Interval, findFirstInInterval)

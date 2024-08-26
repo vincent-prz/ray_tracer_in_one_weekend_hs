@@ -1,6 +1,12 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Camera where
+module Camera
+  ( Camera,
+    CameraArgs (..),
+    mkCamera,
+    render,
+  )
+where
 
 import Color
 import Control.Monad.State (evalState, replicateM)

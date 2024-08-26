@@ -60,7 +60,7 @@ camera =
     CameraArgs
       { cameraArgsAspectRatio = 16 / 9,
         cameraArgsImageWidth = 400,
-        cameraArgsSamplesPerPixel = 50,
+        cameraArgsSamplesPerPixel = 32,
         cameraArgsMaxDepth = 50,
         cameraArgsVerticalAngle = 20,
         cameraArgsLookFrom = Vec3 13 2 3,

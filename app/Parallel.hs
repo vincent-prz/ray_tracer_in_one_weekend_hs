@@ -1,4 +1,4 @@
-module Parallel where
+module Parallel (parMapReduceDicho) where
 
 import Control.DeepSeq (NFData, force)
 import Control.Parallel.Strategies (rpar, rseq, runEval)
@@ -8,7 +8,7 @@ import Control.Parallel.Strategies (rpar, rseq, runEval)
 -- because this allows for reduction to happen incrementally, without needing to
 -- wait for the map to complete. This saves memory, which is usedful especially
 -- if `b` elements are big and numerous.
--- CAVEAT: this does not compute exactly the right thing if the lenght of the list
+-- CAVEAT: this does not compute exactly the right thing if the length of the list
 -- is not a power of 2.
 parMapReduceDicho :: (NFData b) => (a -> b) -> (b -> b -> b) -> [a] -> b
 parMapReduceDicho _ _ [] = error "cannot reduce empty list"
